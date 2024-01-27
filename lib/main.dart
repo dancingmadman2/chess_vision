@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'screens/home_screen.dart';
+import 'screens/home/home_screen.dart';
 
 void main() {
   runApp(
@@ -32,6 +32,9 @@ class _MyAppState extends State<MyApp> {
 
   static final List<Widget> _screens = <Widget>[
     const HomeScreen(),
+    const HomeScreen(),
+    const HomeScreen(),
+    const HomeScreen(),
   ];
 
   @override
@@ -46,28 +49,36 @@ class _MyAppState extends State<MyApp> {
     );
     return MaterialApp(
       home: Scaffold(
-
-          //wrap this with Stack and add NoConnection() widget
           body: _screens.elementAt(selectedIndex),
           bottomNavigationBar: BottomNavigationBar(
             iconSize: 30,
             type: BottomNavigationBarType.fixed,
             backgroundColor: primary,
-            items: const <BottomNavigationBarItem>[
-              BottomNavigationBarItem(
+            items: <BottomNavigationBarItem>[
+              const BottomNavigationBarItem(
                 icon: Icon(CupertinoIcons.home),
-                label: 'HOME',
+                label: 'Home',
               ),
               BottomNavigationBarItem(
-                icon: Icon(CupertinoIcons.chart_bar_fill),
-                label: 'PUZZLES',
+                icon: Image.asset(
+                  'assets/images/chess-game.png',
+                  width: 30,
+                  height: 30,
+                  color: selectedIndex == 1 ? Colors.white : properGrey,
+                ),
+                label: 'Puzzles',
               ),
               BottomNavigationBarItem(
-                icon: Icon(CupertinoIcons.search),
-                label: 'GAMES',
+                icon: Image.asset(
+                  'assets/images/chess.png',
+                  width: 30,
+                  height: 30,
+                  color: selectedIndex == 2 ? Colors.white : properGrey,
+                ),
+                label: 'Minigames',
               ),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.more_horiz), label: 'MORE')
+              const BottomNavigationBarItem(
+                  icon: Icon(Icons.more_horiz), label: 'More')
             ],
             currentIndex: selectedIndex,
             selectedItemColor: Colors.white,
