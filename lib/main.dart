@@ -1,3 +1,5 @@
+import 'package:chess_vision/screens/minigames/minigames_screen.dart';
+import 'package:chess_vision/screens/more/more_screen.dart';
 import 'package:chess_vision/screens/puzzles/puzzles_screen.dart';
 import 'package:chess_vision/styles.dart';
 import 'package:flutter/cupertino.dart';
@@ -34,8 +36,8 @@ class _MyAppState extends State<MyApp> {
   static final List<Widget> _screens = <Widget>[
     const HomeScreen(),
     const PuzzlesScreen(),
-    const HomeScreen(),
-    const HomeScreen(),
+    const MinigamesScreen(),
+    const MoreScreen(),
   ];
 
   @override
@@ -76,10 +78,10 @@ class _MyAppState extends State<MyApp> {
               ),
               BottomNavigationBarItem(
                 icon: Image.asset(
-                  'assets/images/minigame.png',
+                  'assets/images/target.png',
                   width: 30,
                   height: 30,
-                  color: selectedIndex == 2 ? Colors.white : properGrey,
+                  color: selectedIndex == 2 ? Colors.blue : properGrey,
                 ),
                 label: 'Minigames',
               ),
@@ -87,7 +89,11 @@ class _MyAppState extends State<MyApp> {
                   icon: Icon(Icons.more_horiz), label: 'More')
             ],
             currentIndex: selectedIndex,
-            selectedItemColor: selectedIndex == 1 ? green : Colors.white,
+            selectedItemColor: selectedIndex == 1
+                ? green
+                : selectedIndex == 2
+                    ? Colors.blue
+                    : Colors.white,
             unselectedItemColor: properGrey,
             showUnselectedLabels: true,
             showSelectedLabels: true,

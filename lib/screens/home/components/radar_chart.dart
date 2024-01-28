@@ -61,15 +61,14 @@ class _RadarChartSample1State extends State<RadarChartSample1> {
                             text: 'Tactical Awareness',
                           );
                         case 1:
-                          return const RadarChartTitle(
-                              text: 'Speed', angle: 90);
+                          return const RadarChartTitle(text: 'Speed', angle: 0);
                         case 2:
                           return const RadarChartTitle(
                             text: 'Visualization Accuracy',
                           );
                         case 3:
                           return const RadarChartTitle(
-                              text: 'Memory', angle: 270);
+                              text: 'Memory', angle: 0);
                         default:
                           return const RadarChartTitle(text: '');
                       }

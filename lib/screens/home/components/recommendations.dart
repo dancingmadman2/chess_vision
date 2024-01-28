@@ -51,18 +51,24 @@ class Recommendations extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    textAlign: TextAlign.start,
-                    style: defText,
+                  SizedBox(
+                    width: screenWidth / 2 - 15,
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.start,
+                      style: defText,
+                    ),
                   ),
                   const SizedBox(
                     height: 5,
                   ),
-                  Text(
-                    description,
-                    textAlign: TextAlign.start,
-                    style: defTextLight,
+                  SizedBox(
+                    width: screenWidth / 2 - 15,
+                    child: Text(
+                      description,
+                      textAlign: TextAlign.start,
+                      style: defTextLight,
+                    ),
                   ),
                 ],
               ),
