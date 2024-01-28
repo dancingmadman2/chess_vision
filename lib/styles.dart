@@ -17,10 +17,18 @@ TextStyle defTextLight = GoogleFonts.lato(
   fontSize: 14,
   color: Colors.white,
 );
+TextStyle defTextGrey = GoogleFonts.lato(
+  fontSize: 14,
+  color: Colors.white54,
+);
 TextStyle title = GoogleFonts.lato(
     fontSize: 35, color: Colors.white, fontWeight: FontWeight.w800);
+TextStyle title30 = GoogleFonts.lato(
+    fontSize: 30, color: Colors.white, fontWeight: FontWeight.w800);
 TextStyle subtitleGreen =
     GoogleFonts.lato(fontSize: 25, color: green, fontWeight: FontWeight.w700);
+TextStyle subtitle = GoogleFonts.lato(
+    fontSize: 25, color: Colors.white, fontWeight: FontWeight.w700);
 TextStyle subtitleBlue = GoogleFonts.lato(
     fontSize: 25, color: Colors.blue, fontWeight: FontWeight.w700);
 

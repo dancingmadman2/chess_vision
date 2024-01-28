@@ -1,9 +1,9 @@
+import 'package:chess_vision/screens/home/components/radar_chart.dart';
 import 'package:chess_vision/screens/home/components/recommendations.dart';
-import 'package:fl_chart/fl_chart.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../styles.dart';
-import 'components/progress_chart.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -38,27 +38,12 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
-          const SizedBox(
-            height: 15,
-          ),
-          // Put here some graphs and stats
-          Container(
-            //padding: const EdgeInsets.only(left: 5),
-            alignment: Alignment.center,
-            child: Text(
-              'Stats',
-              style: title,
-            ),
-          ),
-          const SizedBox(
-            height: 15,
-          ),
-
+          SizedBox(width: screenWidth - 15, child: RadarChartSample1()),
+          /*
           SizedBox(
-            width: screenWidth - 15,
-            height: 150,
-            child: RatingProgressChart(),
-          ),
+              width: screenWidth - 15,
+              height: 150,
+              child: RatingProgressChart()),*/
           const SizedBox(
             height: 15,
           ),
@@ -92,22 +77,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          Row(
-            children: [
-              const SizedBox(
-                width: 5,
-              ),
-              Text(
-                'Number of Attempts: ',
-                style: defText,
-              ),
-              Text(
-                '138',
-                style: subtitleBlue,
-              ),
-            ],
-          ),
-
           const Spacer(),
           InkWell(
             borderRadius: BorderRadius.circular(8),
@@ -123,43 +92,27 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(
             height: 7.5,
           ),
-
-          Container(
-            width: screenWidth - 15,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8), // Rounded corners
-              color: green, // Background color of the button
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2), // Shadow color
-                  offset: const Offset(0, 3), // Shadow position
-                  blurRadius: 5, // Shadow blur
+          SizedBox(
+              width: screenWidth - 15,
+              height: 65,
+              child: TextButton(
+                style: TextButton.styleFrom(
+                  backgroundColor: green,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(8)),
+                  ),
                 ),
-              ],
-            ),
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: green,
-
-                shadowColor:
-                    Colors.transparent, // No shadow for the button itself
-                elevation: 0, // No elevation for the button itself
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8), // Rounded corners
+                onPressed: () {
+                  // navigate to play against bot
+                },
+                child: Text(
+                  'Play',
+                  style: buttonText,
                 ),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 32, vertical: 20), // Padding inside the button
-              ),
-              child: Text(
-                'Play',
-                style: buttonText,
-              ),
-            ),
-          ),
+              )),
           const SizedBox(
-            height: 15,
-          ),
+            height: 7.5,
+          )
         ],
       ),
     );

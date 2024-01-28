@@ -1,3 +1,4 @@
+import 'package:chess_vision/screens/puzzles/puzzles_screen.dart';
 import 'package:chess_vision/styles.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -32,7 +33,7 @@ class _MyAppState extends State<MyApp> {
 
   static final List<Widget> _screens = <Widget>[
     const HomeScreen(),
-    const HomeScreen(),
+    const PuzzlesScreen(),
     const HomeScreen(),
     const HomeScreen(),
   ];
@@ -55,22 +56,27 @@ class _MyAppState extends State<MyApp> {
             type: BottomNavigationBarType.fixed,
             backgroundColor: primary,
             items: <BottomNavigationBarItem>[
-              const BottomNavigationBarItem(
-                icon: Icon(CupertinoIcons.home),
+              BottomNavigationBarItem(
+                icon: Image.asset(
+                  'assets/images/icon_transparent.png',
+                  width: 30,
+                  height: 30,
+                  color: selectedIndex == 0 ? Colors.white : properGrey,
+                ),
                 label: 'Home',
               ),
               BottomNavigationBarItem(
                 icon: Image.asset(
-                  'assets/images/chess-game.png',
+                  'assets/images/puzzle.png',
                   width: 30,
                   height: 30,
-                  color: selectedIndex == 1 ? Colors.white : properGrey,
+                  color: selectedIndex == 1 ? green : properGrey,
                 ),
                 label: 'Puzzles',
               ),
               BottomNavigationBarItem(
                 icon: Image.asset(
-                  'assets/images/chess.png',
+                  'assets/images/minigame.png',
                   width: 30,
                   height: 30,
                   color: selectedIndex == 2 ? Colors.white : properGrey,
@@ -81,7 +87,7 @@ class _MyAppState extends State<MyApp> {
                   icon: Icon(Icons.more_horiz), label: 'More')
             ],
             currentIndex: selectedIndex,
-            selectedItemColor: Colors.white,
+            selectedItemColor: selectedIndex == 1 ? green : Colors.white,
             unselectedItemColor: properGrey,
             showUnselectedLabels: true,
             showSelectedLabels: true,
