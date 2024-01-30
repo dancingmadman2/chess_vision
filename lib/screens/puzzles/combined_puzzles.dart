@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -15,24 +16,14 @@ class CombinedPuzzles extends StatefulWidget {
 }
 
 class _CombinedPuzzlesState extends State<CombinedPuzzles> {
-/*
-  Future<List<Puzzle>> getPuzzles() async {
-    final String dbPath = await getDatabasePath();
-    final db = await openDatabase(dbPath);
-    final List<Map<String, dynamic>> maps = await db.query('puzzles');
-
-    return List.generate(maps.length, (i) {
-      return Puzzle(
-        puzzleId: maps[i]['puzzleId'],
-        fen: maps[i]['fen'],
-        moves: maps[i]['moves'],
-        rating: maps[i]['rating'],
-        // ... other fields ...
-      );
-    });
-  }*/
-
   Future<void> markPuzzleAsSolved(String puzzleId) async {
+    int userRating = -1;
+
+    var userStats = await getUserStats();
+    if (userStats != null) {
+      userRating = userStats['rating'];
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final dbPath = await getDatabasePath();
     final db = await openDatabase(dbPath);
@@ -44,18 +35,20 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       whereArgs: [puzzleId],
     );
 
+    updateUserRating(userRating + 50);
+
     setState(() {
       prefs.remove('currentPuzzleId');
     });
   }
 
-  Future<Puzzle?> getPuzzle(int minRating, int maxRating) async {
+  Future<Puzzle?> getPuzzle() async {
     final prefs = await SharedPreferences.getInstance();
     String? currentPuzzleId = prefs.getString('currentPuzzleId');
 
     if (currentPuzzleId == null) {
       // Fetch a new random puzzle
-      return await getPuzzleByRating(minRating, maxRating);
+      return await getPuzzleByRating();
     } else {
       //print(currentPuzzleId);
       // Fetch the puzzle with the stored ID
@@ -87,14 +80,19 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     return null;
   }
 
-  Future<Puzzle?> getPuzzleByRating(int minRating, int maxRating) async {
+  Future<Puzzle?> getPuzzleByRating() async {
+    int userRating = -1;
+    var userStats = await getUserStats();
+    if (userStats != null) {
+      userRating = userStats['rating'];
+    }
     final prefs = await SharedPreferences.getInstance();
     final dbPath = await getDatabasePath();
     final db = await openDatabase(dbPath);
 
     String? currentPuzzleId = prefs.getString('currentPuzzleId');
     String whereClause = 'rating >= ? AND rating <= ? AND solved = 0';
-    List<dynamic> whereArgs = [minRating, maxRating];
+    List<dynamic> whereArgs = [userRating - 50, userRating + 50];
 
     // Exclude the current puzzle ID if it exists
     if (currentPuzzleId != null) {
@@ -152,7 +150,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
         centerTitle: true,
       ),
       body: FutureBuilder<Puzzle?>(
-        future: getPuzzle(1300, 1400),
+        future: getPuzzle(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
@@ -164,57 +162,53 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                         color: Colors.white,
                       ));
           } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(
+                child: Text(
+              'Error: ${snapshot.error}',
+              style: defText,
+            ));
           } else {
             // Print the first puzzle's details to the console
             //print('First puzzle: ${snapshot.data?.first.toMap()}');
             final Puzzle sand = snapshot.data!;
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  sand.puzzleId,
-                  style: defText,
-                ),
-                const SizedBox(
-                  height: 15,
-                ),
-                SizedBox(
-                    width: screenWidth - 15,
-                    height: 65,
-                    child: TextButton(
-                      style: TextButton.styleFrom(
-                        backgroundColor: green,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(8)),
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    sand.puzzleId,
+                    style: defText,
+                  ),
+                  const SizedBox(
+                    height: 15,
+                  ),
+                  SizedBox(
+                      width: screenWidth - 15,
+                      height: 65,
+                      child: TextButton(
+                        style: TextButton.styleFrom(
+                          backgroundColor: green,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(8)),
+                          ),
                         ),
-                      ),
-                      onPressed: () {
-                        // if(solutionIsCorrect){
-                        // get new puzzle
-                        // }
+                        onPressed: () {
+                          // if(solutionIsCorrect){
+                          // get new puzzle
+                          // }
 
-                        markPuzzleAsSolved(sand.puzzleId);
+                          markPuzzleAsSolved(sand.puzzleId);
 
-                        getPuzzle(1300, 1400);
-                      },
-                      child: Text(
-                        'Next Puzzle',
-                        style: buttonText,
-                      ),
-                    )),
-              ],
+                          getPuzzle();
+                        },
+                        child: Text(
+                          'Next Puzzle',
+                          style: buttonText,
+                        ),
+                      )),
+                ],
+              ),
             );
-            /*
-             ListView.builder(
-              itemCount: snapshot.data?.length ?? 0,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(snapshot.data![index].fen),
-                  // ... other list tile properties ...
-                );
-              },
-            );*/
           }
         },
       ),
