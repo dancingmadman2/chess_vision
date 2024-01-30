@@ -16,15 +16,12 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  Future<Map<String, dynamic>> fetchUserStats() async {
-    int userRating = -1;
-    var userStats = await getUserStats();
-    if (userStats != null) {
-      userRating = userStats['rating'];
-    }
-    Map<String, dynamic> stats = {'rating': userRating};
+  Future<User?> fetchUserStats() async {
+    User? user;
 
-    return stats;
+    user = await getUserStats();
+
+    return user;
   }
 
   @override
@@ -50,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      body: FutureBuilder<Map<String, dynamic>>(
+      body: FutureBuilder<User?>(
           future: fetchUserStats(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -69,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: defText,
               ));
             } else {
-              final Map<String, dynamic> userStats = snapshot.data!;
+              final User userStats = snapshot.data!;
               return Column(
                 children: [
                   SizedBox(width: screenWidth - 15, child: RadarChartSample1()),
@@ -91,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: defText,
                       ),
                       Text(
-                        '${userStats['rating']}',
+                        '${userStats.rating}',
                         style: subtitleGreen,
                       ),
                     ],

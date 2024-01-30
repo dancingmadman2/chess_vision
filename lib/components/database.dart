@@ -33,6 +33,29 @@ class Puzzle {
   }
 }
 
+class User {
+  final int uid;
+  final int rating;
+  final int puzzlesPlayed;
+  final int puzzlesWon;
+
+  User({
+    required this.uid,
+    required this.rating,
+    required this.puzzlesPlayed,
+    required this.puzzlesWon,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'userId': uid,
+      'rating': rating,
+      'puzzlesPlayed': puzzlesPlayed,
+      'puzzlesWon': puzzlesWon
+    };
+  }
+}
+
 const String _dbName = 'Database.db';
 // Create the database tables
 void createDatabase(Database db) {
@@ -59,13 +82,19 @@ void createDatabase(Database db) {
   insertUserStats(1000, 0, 0);
 }
 
-Future<Map<String, dynamic>?> getUserStats() async {
+Future<User?> getUserStats() async {
   final dbPath = await getDatabasePath();
   final db = await openDatabase(dbPath);
   final List<Map<String, dynamic>> maps =
       await db.query('UserStats', where: 'id = ?', whereArgs: [1]);
   if (maps.isNotEmpty) {
-    return maps.first;
+    final user = User(
+        uid: maps[0]['id'],
+        rating: maps[0]['rating'],
+        puzzlesPlayed: maps[0]['gamesPlayed'],
+        puzzlesWon: maps[0]['gamesWon']);
+
+    return user;
   }
   return null;
 }
@@ -129,17 +158,6 @@ Future<void> insertPuzzlesInBatch(List<Puzzle> puzzles) async {
       );
     }
   });
-}
-
-Future<void> deleteSolvedPuzzle(String puzzleId) async {
-  final dbPath = await getDatabasePath();
-  final db = await openDatabase(dbPath);
-
-  await db.delete(
-    'puzzles',
-    where: 'puzzleId = ?',
-    whereArgs: [puzzleId],
-  );
 }
 
 // Manage database state

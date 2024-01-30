@@ -1,4 +1,5 @@
 import 'package:chess_vision/components/database.dart';
+import 'package:chess_vision/screens/puzzles/components/puzzle_with_stats.dart';
 import 'package:chess_vision/styles.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -19,15 +20,17 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
   Future<void> markPuzzleAsSolved(String puzzleId) async {
     int userRating = -1;
 
+    // fetch the user rating
     var userStats = await getUserStats();
     if (userStats != null) {
-      userRating = userStats['rating'];
+      userRating = userStats.rating;
     }
 
     final prefs = await SharedPreferences.getInstance();
     final dbPath = await getDatabasePath();
     final db = await openDatabase(dbPath);
 
+    // mark it as solved in the sql table
     await db.update(
       'Puzzles',
       {'solved': 1}, // Set solved to 1
@@ -35,13 +38,17 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       whereArgs: [puzzleId],
     );
 
-    updateUserRating(userRating + 50);
+    // updating user rating
+    // need to implement a better way to add rating to the user
+    updateUserRating(userRating + 13);
 
+    // removing the sharedpref tag so that new puzzles can be generated
     setState(() {
       prefs.remove('currentPuzzleId');
     });
   }
 
+/*
   Future<Puzzle?> getPuzzle() async {
     final prefs = await SharedPreferences.getInstance();
     String? currentPuzzleId = prefs.getString('currentPuzzleId');
@@ -50,10 +57,27 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       // Fetch a new random puzzle
       return await getPuzzleByRating();
     } else {
-      //print(currentPuzzleId);
       // Fetch the puzzle with the stored ID
       return await getPuzzleById(currentPuzzleId);
     }
+  }*/
+
+  Future<PuzzleWithUserStats> getPuzzleWithStats() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? currentPuzzleId = prefs.getString('currentPuzzleId');
+    User? user;
+    Puzzle? puzzle;
+
+    if (currentPuzzleId == null) {
+      puzzle = await getPuzzleByRating(); // Fetch a new random puzzle
+    } else {
+      puzzle = await getPuzzleById(
+          currentPuzzleId); // Fetch the puzzle with the stored ID
+    }
+
+    user = await getUserStats(); // Get user stats
+
+    return PuzzleWithUserStats(puzzle: puzzle, userStats: user);
   }
 
   Future<Puzzle?> getPuzzleById(String puzzleId) async {
@@ -84,7 +108,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     int userRating = -1;
     var userStats = await getUserStats();
     if (userStats != null) {
-      userRating = userStats['rating'];
+      userRating = userStats.rating;
     }
     final prefs = await SharedPreferences.getInstance();
     final dbPath = await getDatabasePath();
@@ -149,8 +173,8 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
         ),
         centerTitle: true,
       ),
-      body: FutureBuilder<Puzzle?>(
-        future: getPuzzle(),
+      body: FutureBuilder<PuzzleWithUserStats>(
+        future: getPuzzleWithStats(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
@@ -170,11 +194,19 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
           } else {
             // Print the first puzzle's details to the console
             //print('First puzzle: ${snapshot.data?.first.toMap()}');
-            final Puzzle sand = snapshot.data!;
+            final Puzzle sand = snapshot.data!.puzzle!;
+            final User stats = snapshot.data!.userStats!;
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  Text(
+                    '${stats.rating}',
+                    style: subtitle,
+                  ),
+                  const SizedBox(
+                    height: 50,
+                  ),
                   Text(
                     sand.puzzleId,
                     style: defText,
@@ -193,13 +225,12 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                           ),
                         ),
                         onPressed: () {
-                          // if(solutionIsCorrect){
-                          // get new puzzle
-                          // }
-
+                          /*
+                        authenticate the puzzle here
+                          */
                           markPuzzleAsSolved(sand.puzzleId);
 
-                          getPuzzle();
+                          getPuzzleWithStats();
                         },
                         child: Text(
                           'Next Puzzle',
