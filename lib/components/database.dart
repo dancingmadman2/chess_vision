@@ -33,17 +33,59 @@ class Puzzle {
   }
 }
 
-String _dbName = 'Puzzles.db';
+const String _dbName = 'Database.db';
 // Create the database tables
 void createDatabase(Database db) {
+  // Create table for puzzles
   db.execute('''
   CREATE TABLE Puzzles(
   puzzleId TEXT PRIMARY KEY,
   fen TEXT,
   moves TEXT,
-  rating INTEGER
+  rating INTEGER,
+  solved INTEGER DEFAULT 0
     )
   ''');
+
+  // Create the UserStats table
+  db.execute('''
+    CREATE TABLE UserStats(
+      id INTEGER PRIMARY KEY,
+      rating INTEGER,
+      gamesPlayed INTEGER,
+      gamesWon INTEGER
+    )
+  ''');
+  insertUserStats(1000, 0, 0);
+}
+
+Future<Map<String, dynamic>?> getUserStats() async {
+  final dbPath = await getDatabasePath();
+  final db = await openDatabase(dbPath);
+  final List<Map<String, dynamic>> maps =
+      await db.query('UserStats', where: 'id = ?', whereArgs: [1]);
+  if (maps.isNotEmpty) {
+    return maps.first;
+  }
+  return null;
+}
+
+Future<void> insertUserStats(int rating, int gamesPlayed, int gamesWon) async {
+  final dbPath = await getDatabasePath();
+  final db = await openDatabase(dbPath);
+  await db.insert('UserStats', {
+    'id': 1,
+    'rating': rating,
+    'gamesPlayed': gamesPlayed,
+    'gamesWon': gamesWon
+  });
+}
+
+Future<void> updateUserRating(int newRating) async {
+  final dbPath = await getDatabasePath();
+  final db = await openDatabase(dbPath);
+  await db.update('UserStats', {'rating': newRating},
+      where: 'id = ?', whereArgs: [1]);
 }
 
 // Read and parse the CSV file
@@ -87,6 +129,17 @@ Future<void> insertPuzzlesInBatch(List<Puzzle> puzzles) async {
       );
     }
   });
+}
+
+Future<void> deleteSolvedPuzzle(String puzzleId) async {
+  final dbPath = await getDatabasePath();
+  final db = await openDatabase(dbPath);
+
+  await db.delete(
+    'puzzles',
+    where: 'puzzleId = ?',
+    whereArgs: [puzzleId],
+  );
 }
 
 // Manage database state

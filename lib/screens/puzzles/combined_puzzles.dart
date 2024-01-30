@@ -32,6 +32,23 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     });
   }*/
 
+  Future<void> markPuzzleAsSolved(String puzzleId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final dbPath = await getDatabasePath();
+    final db = await openDatabase(dbPath);
+
+    await db.update(
+      'Puzzles',
+      {'solved': 1}, // Set solved to 1
+      where: 'puzzleId = ?',
+      whereArgs: [puzzleId],
+    );
+
+    setState(() {
+      prefs.remove('currentPuzzleId');
+    });
+  }
+
   Future<Puzzle?> getPuzzle(int minRating, int maxRating) async {
     final prefs = await SharedPreferences.getInstance();
     String? currentPuzzleId = prefs.getString('currentPuzzleId');
@@ -40,14 +57,10 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       // Fetch a new random puzzle
       return await getPuzzleByRating(minRating, maxRating);
     } else {
+      //print(currentPuzzleId);
       // Fetch the puzzle with the stored ID
       return await getPuzzleById(currentPuzzleId);
     }
-  }
-
-  void markPuzzleAsSolved(String puzzleId) async {
-    final prefs = await SharedPreferences.getInstance();
-    prefs.remove('currentPuzzleId'); // Remove or set a flag for a new puzzle
   }
 
   Future<Puzzle?> getPuzzleById(String puzzleId) async {
@@ -80,7 +93,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     final db = await openDatabase(dbPath);
 
     String? currentPuzzleId = prefs.getString('currentPuzzleId');
-    String whereClause = 'rating >= ? AND rating <= ?';
+    String whereClause = 'rating >= ? AND rating <= ? AND solved = 0';
     List<dynamic> whereArgs = [minRating, maxRating];
 
     // Exclude the current puzzle ID if it exists
@@ -125,6 +138,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       appBar: AppBar(
         backgroundColor: primary,
         leading: InkWell(
+            borderRadius: BorderRadius.circular(8),
             onTap: () => Navigator.pop(context),
             child: const Icon(
               CupertinoIcons.back,
@@ -179,10 +193,10 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                         // if(solutionIsCorrect){
                         // get new puzzle
                         // }
-                        setState(() {
-                          markPuzzleAsSolved(sand.puzzleId);
-                          getPuzzle(1300, 1400);
-                        });
+
+                        markPuzzleAsSolved(sand.puzzleId);
+
+                        getPuzzle(1300, 1400);
                       },
                       child: Text(
                         'Next Puzzle',
