@@ -33,10 +33,11 @@ class Puzzle {
   }
 }
 
+String _dbName = 'Puzzles.db';
 // Create the database tables
 void createDatabase(Database db) {
   db.execute('''
-  CREATE TABLE puzzles(
+  CREATE TABLE Puzzles(
   puzzleId TEXT PRIMARY KEY,
   fen TEXT,
   moves TEXT,
@@ -69,7 +70,7 @@ Future<void> loadCsvData() async {
 
 Future<String> getDatabasePath() async {
   final directory = await getApplicationDocumentsDirectory();
-  return join(directory.path, 'puzzles.db');
+  return join(directory.path, _dbName);
 }
 
 Future<void> insertPuzzlesInBatch(List<Puzzle> puzzles) async {
@@ -116,7 +117,7 @@ Future<void> initializeDatabase() async {
     openDatabase(dbPath).then((db) {
       createDatabase(db);
       loadCsvData().then((_) {
-        // Dismiss the SnackBar here
+        // Dismiss the SnackBar
         Get.back();
 
         prefs.setBool('isDatabaseInitialized', true);
