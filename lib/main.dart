@@ -1,14 +1,19 @@
+import 'package:chess_vision/components/database.dart';
 import 'package:chess_vision/screens/minigames/minigames_screen.dart';
 import 'package:chess_vision/screens/more/more_screen.dart';
 import 'package:chess_vision/screens/puzzles/puzzles_screen.dart';
 import 'package:chess_vision/styles.dart';
-import 'package:flutter/cupertino.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'screens/home/home_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDatabase(); // Initialize the database
   runApp(
     const MyApp(),
   );
@@ -50,7 +55,7 @@ class _MyAppState extends State<MyApp> {
           systemNavigationBarColor: primary,
           systemNavigationBarIconBrightness: Brightness.dark),
     );
-    return MaterialApp(
+    return GetMaterialApp(
       home: Scaffold(
           body: _screens.elementAt(selectedIndex),
           bottomNavigationBar: BottomNavigationBar(

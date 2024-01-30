@@ -1,3 +1,4 @@
+import 'package:chess_vision/screens/puzzles/combined_puzzles.dart';
 import 'package:chess_vision/screens/puzzles/components/puzzles_button.dart';
 import 'package:chess_vision/styles.dart';
 import 'package:flutter/material.dart';
@@ -33,6 +34,7 @@ class _MinigamesScreenState extends State<MinigamesScreen> {
             height: 30,
           ),
           PuzzlesButton(
+              destination: const CombinedPuzzles(),
               screenWidth: screenWidth,
               image: 'assets/images/coordinate.png',
               title: 'Coordinate Trainer',
@@ -42,6 +44,7 @@ class _MinigamesScreenState extends State<MinigamesScreen> {
             height: 30,
           ),
           PuzzlesButton(
+              destination: const CombinedPuzzles(),
               screenWidth: screenWidth,
               image: 'assets/images/chess_board.png',
               title: 'Remember The Position',
@@ -51,6 +54,7 @@ class _MinigamesScreenState extends State<MinigamesScreen> {
             height: 15,
           ),
           PuzzlesButton(
+              destination: const CombinedPuzzles(),
               screenWidth: screenWidth,
               image: 'assets/images/queen_knight.png',
               title: 'Capture The Queen',
@@ -60,6 +64,7 @@ class _MinigamesScreenState extends State<MinigamesScreen> {
             height: 15,
           ),
           PuzzlesButton(
+              destination: const CombinedPuzzles(),
               screenWidth: screenWidth,
               image: 'assets/images/checkmate.png',
               title: 'Find The Mate',

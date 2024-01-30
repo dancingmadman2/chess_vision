@@ -1,3 +1,4 @@
+import 'package:chess_vision/screens/puzzles/combined_puzzles.dart';
 import 'package:chess_vision/screens/puzzles/components/puzzles_button.dart';
 import 'package:chess_vision/styles.dart';
 
@@ -36,12 +37,14 @@ class _PuzzlesScreenState extends State<PuzzlesScreen> {
             image: 'assets/images/puzzle_knight.png',
             title: 'Combined Puzzles',
             description:
-                'These are a combination of all the puzzles to test yourself.',
+                'These are a combination of all the puzzles to test yourself and get a rating.',
+            destination: const CombinedPuzzles(),
           ),
           const SizedBox(
             height: 30,
           ),
           PuzzlesButton(
+            destination: const CombinedPuzzles(),
             screenWidth: screenWidth,
             image: 'assets/images/books.png',
             title: 'Opening Puzzles',
@@ -52,6 +55,7 @@ class _PuzzlesScreenState extends State<PuzzlesScreen> {
             height: 15,
           ),
           PuzzlesButton(
+            destination: const CombinedPuzzles(),
             screenWidth: screenWidth,
             image: 'assets/images/queen.png',
             title: 'Middlegame Puzzles',
@@ -62,6 +66,7 @@ class _PuzzlesScreenState extends State<PuzzlesScreen> {
             height: 15,
           ),
           PuzzlesButton(
+            destination: const CombinedPuzzles(),
             screenWidth: screenWidth,
             image: 'assets/images/rook_king.png',
             title: 'Endgame Puzzles',

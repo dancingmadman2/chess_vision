@@ -8,12 +8,14 @@ class PuzzlesButton extends StatelessWidget {
     required this.image,
     required this.title,
     required this.description,
+    required this.destination,
   });
 
   final double screenWidth;
   final String image;
   final String title;
   final String description;
+  final Widget destination;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +28,10 @@ class PuzzlesButton extends StatelessWidget {
             borderRadius: BorderRadius.all(Radius.circular(8)),
           ),
         ),
-        onPressed: () {},
+        onPressed: () {
+          Navigator.push(
+              context, MaterialPageRoute(builder: (context) => destination));
+        },
         child: Row(
           children: [
             Image.asset(
