@@ -24,8 +24,11 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
   int index = 0;
   List<bool> isCorrect = List.filled(20, false);
   int tryGiveUp = 0;
-  late Timer _timer;
+
   late ValueNotifier<int> _giveUp;
+  late ValueNotifier<List<bool>> _answer;
+  late ValueNotifier<bool> _isWrong;
+  late ValueNotifier<bool> _isRight;
 
   Future<void> markPuzzleAsSolved(String puzzleId) async {
     int userRating = -1;
@@ -190,6 +193,20 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     if (_controller.text.toString().toLowerCase() ==
         solution[index].toLowerCase()) {
       isAuthenticated = true;
+
+      _answer.value = List<bool>.from(_answer.value)..[0] = true;
+
+      Timer.periodic(const Duration(milliseconds: 1000), (timer) {
+        _answer.value = List<bool>.from(_answer.value)..[0] = false;
+        timer.cancel();
+      });
+    } else {
+      _answer.value = List<bool>.from(_answer.value)..[1] = true;
+
+      Timer.periodic(const Duration(milliseconds: 1000), (timer) {
+        _answer.value = List<bool>.from(_answer.value)..[1] = false;
+        timer.cancel();
+      });
     }
     return isAuthenticated;
   }
@@ -199,6 +216,13 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     super.initState();
     _future = getPuzzleWithStats();
     _giveUp = ValueNotifier(0);
+    _isWrong = ValueNotifier(false);
+    _isRight = ValueNotifier(false);
+    _answer = ValueNotifier<List<bool>>(List<bool>.generate(
+      2, // Replace with the desired number of items in the list
+      (index) =>
+          false, // Initialize each item with false or true based on your requirements
+    ));
   }
 
   @override
@@ -299,28 +323,48 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                   ),
                   SizedBox(
                     width: screenWidth / 2,
-                    child: TextField(
-                      controller: _controller,
-                      style: subtitle,
-                      maxLength: 10,
-                      onSubmitted: (value) => checkAnswer(sand),
-                      cursorColor: Colors.white,
-                      decoration: InputDecoration(
-                          labelText: 'Enter your solution',
-                          labelStyle: defTextGrey,
-                          counterText: '',
-                          focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(width: 2, color: green)),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(
-                                  width: 2, color: Colors.white)),
-                          enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(
-                                  width: 2, color: Colors.white))),
-                    ),
+                    child: ValueListenableBuilder<List<bool?>>(
+                        valueListenable: _answer,
+                        builder: (context, value, child) {
+                          return TextField(
+                            controller: _controller,
+                            style: subtitle,
+                            maxLength: 10,
+                            onSubmitted: (value) => checkAnswer(sand),
+                            cursorColor: Colors.white,
+                            decoration: InputDecoration(
+                                labelText: 'Enter your solution',
+                                labelStyle: defTextGrey,
+                                counterText: '',
+                                focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(
+                                        width: 2,
+                                        color: _answer.value[1]
+                                            ? Colors.red
+                                            : _answer.value[0]
+                                                ? green
+                                                : Colors.white)),
+                                errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(
+                                        width: 2,
+                                        color:
+                                            _answer.value[0] ? green : mono)),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(
+                                        width: 2,
+                                        color:
+                                            _answer.value[0] ? green : mono)),
+                                enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(
+                                        width: 2,
+                                        color:
+                                            _answer.value[0] ? green : mono))),
+                          );
+                        }),
                   ),
                   const SizedBox(
                     height: 15,
@@ -429,6 +473,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     }
 
     if (isCorrect[l - 1]) {
+      index = 0;
       isCorrect.fillRange(0, 20, false);
       markPuzzleAsSolved(sand.puzzleId).then((_) {
         _future = getPuzzleWithStats();
