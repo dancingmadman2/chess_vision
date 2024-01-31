@@ -56,6 +56,12 @@ class _MyAppState extends State<MyApp> {
           systemNavigationBarIconBrightness: Brightness.dark),
     );
     return GetMaterialApp(
+      theme: ThemeData(
+        textSelectionTheme: TextSelectionThemeData(
+          selectionColor: green,
+          selectionHandleColor: green,
+        ),
+      ),
       home: Scaffold(
           body: _screens.elementAt(selectedIndex),
           bottomNavigationBar: BottomNavigationBar(

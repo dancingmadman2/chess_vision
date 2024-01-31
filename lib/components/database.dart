@@ -99,6 +99,29 @@ Future<User?> getUserStats() async {
   return null;
 }
 
+Future<Puzzle?> getPuzzle(String puzzleId) async {
+  final dbPath = await getDatabasePath();
+  final db = await openDatabase(dbPath);
+  final List<Map<String, dynamic>> maps = await db.query(
+    'puzzles',
+    where: 'puzzleId = ?',
+    whereArgs: [puzzleId],
+  );
+  if (maps.isNotEmpty) {
+    // ... create and return Puzzle object ...
+    final puzzle = Puzzle(
+      puzzleId: maps[0]['puzzleId'],
+      fen: maps[0]['fen'],
+      moves: maps[0]['moves'],
+      rating: maps[0]['rating'],
+      // ... other fields ...
+    );
+
+    return puzzle;
+  }
+  return null;
+}
+
 Future<void> insertUserStats(int rating, int gamesPlayed, int gamesWon) async {
   final dbPath = await getDatabasePath();
   final db = await openDatabase(dbPath);

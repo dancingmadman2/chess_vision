@@ -149,6 +149,54 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     return null;
   }
 
+  Future<bool> authenticatePuzzle(String puzzleId) async {
+    bool isAuthenticated = false;
+    var puzzle = await getPuzzle(puzzleId);
+    String moves = '';
+    String fen = '';
+    if (puzzle != null) {
+      moves = puzzle.moves;
+      fen = puzzle.fen;
+    }
+
+    List<String> movesArray = [];
+
+    List<String> parsedMoves = [];
+    movesArray = moves.split(' ');
+
+    /*
+    parsing logic for solution
+     moves:  h4h5 d4f2 g3b3 c2b3 a2b3 f2e1
+     current board: 4r1k1/5p2/6p1/2pRP3/PpPb3P/6Q1/P1q3P1/4R2K w - - 1 31
+     look at g3 return the piece
+     return example: Qb3
+     update current board(fen) after each move
+    */
+    String xFen = fen;
+    for (int i = 0; i < movesArray.length; i++) {
+      String parsedMove =
+          '${getPieceAtSquare(xFen, movesArray[i].substring(0, 2)).toUpperCase()} ${movesArray[i].substring(2, 4).toLowerCase()}';
+
+      if (getPieceAtSquare(xFen, movesArray[i].substring(2, 4)).toLowerCase() !=
+          '') {
+        parsedMove =
+            '${getPieceAtSquare(xFen, movesArray[i].substring(0, 2)).toUpperCase()}x ${movesArray[i].substring(2, 4).toLowerCase()}';
+      }
+
+      parsedMove = parsedMove.replaceAll(' ', '');
+
+      parsedMoves.add(parsedMove);
+      xFen = applyMoveToFen(xFen, movesArray[i]);
+    }
+    print(parsedMoves);
+    String solution = movesArray[0];
+
+    if (_controller.text.toString() == solution) {
+      isAuthenticated = true;
+    }
+    return isAuthenticated;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -160,6 +208,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     double screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
       backgroundColor: primary,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: primary,
         leading: InkWell(
@@ -201,30 +250,65 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
             final User stats = snapshot.data!.userStats!;
             return Center(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    '${stats.rating}',
-                    style: subtitle,
+                  Image.asset(
+                    'assets/images/puzzle_knight.png',
+                    width: 60,
+                    color: green,
+                  ),
+                  const SizedBox(
+                    height: 30,
+                  ),
+                  Row(
+                    children: [
+                      const SizedBox(
+                        width: 5,
+                      ),
+                      Text(
+                        'Your Rating: ',
+                        style: defText,
+                      ),
+                      Text(
+                        '${stats.rating}',
+                        style: subtitleGreen,
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      const SizedBox(
+                        width: 5,
+                      ),
+                      Text(
+                        'Puzzle Rating: ',
+                        style: defText,
+                      ),
+                      Text(
+                        '${sand.rating}',
+                        style: subtitleBlue,
+                      ),
+                    ],
                   ),
                   const SizedBox(
                     height: 50,
                   ),
                   Text(
-                    sand.puzzleId,
+                    'Puzzle: ${sand.puzzleId}',
                     style: defText,
                   ),
                   const SizedBox(
-                    height: 15,
+                    height: 30,
                   ),
                   SizedBox(
                     width: screenWidth / 2,
                     child: TextField(
                       controller: _controller,
-                      style: defText,
+                      style: subtitle,
                       maxLength: 10,
                       cursorColor: Colors.white,
                       decoration: InputDecoration(
+                          labelText: 'Enter your solution',
+                          labelStyle: defTextGrey,
                           counterText: '',
                           focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -256,9 +340,11 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                           /*
                         authenticate the puzzle here
                           */
+                          authenticatePuzzle(sand.puzzleId);
+                          /*
                           markPuzzleAsSolved(sand.puzzleId).then((_) {
                             _future = getPuzzleWithStats();
-                          });
+                          });*/
                         },
                         child: Text(
                           'Next Puzzle',
@@ -273,4 +359,106 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       ),
     );
   }
+}
+
+String getPieceAtSquare(String fenBoard, String position) {
+  // Parse FEN board
+  List<String> rows = fenBoard.split('/');
+  List<String> board = [];
+  for (String row in rows) {
+    for (int i = 0; i < row.length; i++) {
+      if (row[i] == '1' ||
+          row[i] == '2' ||
+          row[i] == '3' ||
+          row[i] == '4' ||
+          row[i] == '5' ||
+          row[i] == '6' ||
+          row[i] == '7' ||
+          row[i] == '8') {
+        // Add empty squares
+        int count = int.parse(row[i]);
+        for (int j = 0; j < count; j++) {
+          board.add('');
+        }
+      } else {
+        // Add pieces
+        board.add(row[i]);
+      }
+    }
+  }
+
+  // Convert position to indices
+  int file = position.codeUnitAt(0) - 'a'.codeUnitAt(0);
+  int rank = 8 - int.parse(position[1]);
+
+  // Get piece at the specified square
+  String piece = board[rank * 8 + file];
+
+  return piece;
+}
+
+String applyMoveToFen(String fenBoard, String move) {
+  // Parse FEN board
+  List<String> rows = fenBoard.split('/');
+  List<String> board = [];
+  for (String row in rows) {
+    for (int i = 0; i < row.length; i++) {
+      if (row[i] == '1' ||
+          row[i] == '2' ||
+          row[i] == '3' ||
+          row[i] == '4' ||
+          row[i] == '5' ||
+          row[i] == '6' ||
+          row[i] == '7' ||
+          row[i] == '8') {
+        // Add empty squares
+        int count = int.parse(row[i]);
+        for (int j = 0; j < count; j++) {
+          board.add('');
+        }
+      } else {
+        // Add pieces
+        board.add(row[i]);
+      }
+    }
+  }
+
+  // Parse move
+  int fromFile = move[0].codeUnitAt(0) - 'a'.codeUnitAt(0);
+  int fromRank = 8 - int.parse(move[1]);
+
+  int toFile = move[2].codeUnitAt(0) - 'a'.codeUnitAt(0);
+  int toRank = 8 - int.parse(move[3]);
+
+  // Get piece at the source square
+  String piece = board[fromRank * 8 + fromFile];
+
+  // Update board with the move
+  board[fromRank * 8 + fromFile] = '';
+  board[toRank * 8 + toFile] = piece;
+
+  // Convert board back to FEN
+  String updatedFen = '';
+  int emptyCount = 0;
+  for (int i = 0; i < board.length; i++) {
+    if (board[i].isEmpty) {
+      emptyCount++;
+    } else {
+      if (emptyCount > 0) {
+        updatedFen += emptyCount.toString();
+        emptyCount = 0;
+      }
+      updatedFen += board[i];
+    }
+
+    if ((i + 1) % 8 == 0 && i != board.length - 1) {
+      if (emptyCount > 0) {
+        updatedFen += emptyCount.toString();
+        emptyCount = 0;
+      }
+      updatedFen += '/';
+    }
+  }
+
+  return updatedFen;
 }
