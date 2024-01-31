@@ -19,6 +19,8 @@ class CombinedPuzzles extends StatefulWidget {
 class _CombinedPuzzlesState extends State<CombinedPuzzles> {
   final TextEditingController _controller = TextEditingController();
   late Future _future;
+  int index = 0;
+  List<bool> isCorrect = List.filled(20, false);
 
   Future<void> markPuzzleAsSolved(String puzzleId) async {
     int userRating = -1;
@@ -49,20 +51,6 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       prefs.remove('currentPuzzleId');
     });
   }
-
-/*
-  Future<Puzzle?> getPuzzle() async {
-    final prefs = await SharedPreferences.getInstance();
-    String? currentPuzzleId = prefs.getString('currentPuzzleId');
-
-    if (currentPuzzleId == null) {
-      // Fetch a new random puzzle
-      return await getPuzzleByRating();
-    } else {
-      // Fetch the puzzle with the stored ID
-      return await getPuzzleById(currentPuzzleId);
-    }
-  }*/
 
   Future<PuzzleWithUserStats> getPuzzleWithStats() async {
     final prefs = await SharedPreferences.getInstance();
@@ -149,7 +137,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     return null;
   }
 
-  Future<bool> authenticatePuzzle(String puzzleId) async {
+  Future<bool> authenticateSolution(String puzzleId, int index) async {
     bool isAuthenticated = false;
     var puzzle = await getPuzzle(puzzleId);
     String moves = '';
@@ -158,12 +146,9 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       moves = puzzle.moves;
       fen = puzzle.fen;
     }
-
     List<String> movesArray = [];
-
     List<String> parsedMoves = [];
     movesArray = moves.split(' ');
-
     /*
     parsing logic for solution
      moves:  h4h5 d4f2 g3b3 c2b3 a2b3 f2e1
@@ -173,25 +158,31 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
      update current board(fen) after each move
     */
     String xFen = fen;
+    // Loop to parse the moves
     for (int i = 0; i < movesArray.length; i++) {
+      //
       String parsedMove =
           '${getPieceAtSquare(xFen, movesArray[i].substring(0, 2)).toUpperCase()} ${movesArray[i].substring(2, 4).toLowerCase()}';
-
+      //
       if (getPieceAtSquare(xFen, movesArray[i].substring(2, 4)).toLowerCase() !=
           '') {
         parsedMove =
             '${getPieceAtSquare(xFen, movesArray[i].substring(0, 2)).toUpperCase()}x ${movesArray[i].substring(2, 4).toLowerCase()}';
       }
-
       parsedMove = parsedMove.replaceAll(' ', '');
-
       parsedMoves.add(parsedMove);
       xFen = applyMoveToFen(xFen, movesArray[i]);
     }
-    print(parsedMoves);
-    String solution = movesArray[0];
+    List<String> solution = [];
 
-    if (_controller.text.toString() == solution) {
+    for (int i = 0; i < parsedMoves.length; i++) {
+      if (i % 2 != 0) {
+        solution.add(parsedMoves[i]);
+      }
+    }
+    print(solution);
+    if (_controller.text.toString().toLowerCase() ==
+        solution[index].toLowerCase()) {
       isAuthenticated = true;
     }
     return isAuthenticated;
@@ -305,6 +296,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                       controller: _controller,
                       style: subtitle,
                       maxLength: 10,
+                      onSubmitted: (value) => checkAnswer(sand),
                       cursorColor: Colors.white,
                       decoration: InputDecoration(
                           labelText: 'Enter your solution',
@@ -336,18 +328,16 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                             borderRadius: BorderRadius.all(Radius.circular(8)),
                           ),
                         ),
-                        onPressed: () {
-                          /*
-                        authenticate the puzzle here
-                          */
-                          authenticatePuzzle(sand.puzzleId);
+                        onPressed: () async {
+                          await checkAnswer(sand);
+
                           /*
                           markPuzzleAsSolved(sand.puzzleId).then((_) {
                             _future = getPuzzleWithStats();
                           });*/
                         },
                         child: Text(
-                          'Next Puzzle',
+                          'Check Solution',
                           style: buttonText,
                         ),
                       )),
@@ -358,6 +348,29 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
         },
       ),
     );
+  }
+
+  Future<void> checkAnswer(Puzzle sand) async {
+    List<String> movesArray = [];
+
+    movesArray = sand.moves.split(' ');
+    int l = movesArray.length ~/ 2;
+
+    if (index < l) {
+      isCorrect[index] = (await authenticateSolution(sand.puzzleId, index));
+    }
+
+    if (isCorrect[index]) {
+      index++;
+      _controller.clear();
+    }
+
+    if (isCorrect[l - 1]) {
+      isCorrect.fillRange(0, 20, false);
+      markPuzzleAsSolved(sand.puzzleId).then((_) {
+        _future = getPuzzleWithStats();
+      });
+    }
   }
 }
 
