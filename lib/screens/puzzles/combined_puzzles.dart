@@ -1,5 +1,7 @@
+import 'dart:async';
+
 import 'package:chess_vision/components/database.dart';
-import 'package:chess_vision/screens/puzzles/components/puzzle_with_stats.dart';
+import 'package:chess_vision/screens/puzzles/components/puzzle_methods.dart';
 import 'package:chess_vision/styles.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -21,6 +23,9 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
   late Future _future;
   int index = 0;
   List<bool> isCorrect = List.filled(20, false);
+  int tryGiveUp = 0;
+  late Timer _timer;
+  late ValueNotifier<int> _giveUp;
 
   Future<void> markPuzzleAsSolved(String puzzleId) async {
     int userRating = -1;
@@ -156,6 +161,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
      look at g3 return the piece
      return example: Qb3
      update current board(fen) after each move
+     iterate
     */
     String xFen = fen;
     // Loop to parse the moves
@@ -192,6 +198,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
   void initState() {
     super.initState();
     _future = getPuzzleWithStats();
+    _giveUp = ValueNotifier(0);
   }
 
   @override
@@ -318,29 +325,67 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                   const SizedBox(
                     height: 15,
                   ),
-                  SizedBox(
-                      width: screenWidth - 15,
-                      height: 65,
-                      child: TextButton(
-                        style: TextButton.styleFrom(
-                          backgroundColor: green,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(8)),
-                          ),
-                        ),
-                        onPressed: () async {
-                          await checkAnswer(sand);
+                  Row(
+                    children: [
+                      const SizedBox(
+                        width: 15,
+                      ),
+                      Expanded(
+                        child: SizedBox(
+                            //width: screenWidth - 15,
+                            height: 70,
+                            child: TextButton(
+                              style: TextButton.styleFrom(
+                                backgroundColor: green,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(8)),
+                                ),
+                              ),
+                              onPressed: () async {
+                                await checkAnswer(sand);
 
-                          /*
-                          markPuzzleAsSolved(sand.puzzleId).then((_) {
-                            _future = getPuzzleWithStats();
-                          });*/
-                        },
-                        child: Text(
-                          'Check Solution',
-                          style: buttonText,
-                        ),
-                      )),
+                                /*
+                                markPuzzleAsSolved(sand.puzzleId).then((_) {
+                                  _future = getPuzzleWithStats();
+                                });*/
+                              },
+                              child: Text(
+                                'Check Solution',
+                                style: buttonText,
+                              ),
+                            )),
+                      ),
+                      const SizedBox(
+                        width: 15,
+                      ),
+                      SizedBox(
+                          width: screenWidth / 2 - 50,
+                          height: 70,
+                          child: TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor: mono,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(8)),
+                              ),
+                            ),
+                            onPressed: () async => await giveUp(),
+                            child: ValueListenableBuilder<int?>(
+                                valueListenable: _giveUp,
+                                builder: (context, value, child) {
+                                  return Text(
+                                    value == 1 ? 'Are you sure?' : 'Give Up?',
+                                    style: buttonText,
+                                    textAlign: TextAlign.center,
+                                  );
+                                }),
+                          )),
+                      const SizedBox(
+                        width: 15,
+                      ),
+                    ],
+                  ),
                 ],
               ),
             );
@@ -348,6 +393,24 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
         },
       ),
     );
+  }
+
+  Future<void> giveUp() async {
+    tryGiveUp++;
+    _giveUp.value = tryGiveUp;
+
+    Timer.periodic(const Duration(seconds: 2), (timer) {
+      tryGiveUp = 0;
+      _giveUp.value = tryGiveUp;
+      timer.cancel();
+    });
+    if (tryGiveUp > 1) {
+      final prefs = await SharedPreferences.getInstance();
+      // removing the sharedpref tag so that new puzzles can be generated
+      setState(() {
+        prefs.remove('currentPuzzleId');
+      });
+    }
   }
 
   Future<void> checkAnswer(Puzzle sand) async {
@@ -372,106 +435,4 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       });
     }
   }
-}
-
-String getPieceAtSquare(String fenBoard, String position) {
-  // Parse FEN board
-  List<String> rows = fenBoard.split('/');
-  List<String> board = [];
-  for (String row in rows) {
-    for (int i = 0; i < row.length; i++) {
-      if (row[i] == '1' ||
-          row[i] == '2' ||
-          row[i] == '3' ||
-          row[i] == '4' ||
-          row[i] == '5' ||
-          row[i] == '6' ||
-          row[i] == '7' ||
-          row[i] == '8') {
-        // Add empty squares
-        int count = int.parse(row[i]);
-        for (int j = 0; j < count; j++) {
-          board.add('');
-        }
-      } else {
-        // Add pieces
-        board.add(row[i]);
-      }
-    }
-  }
-
-  // Convert position to indices
-  int file = position.codeUnitAt(0) - 'a'.codeUnitAt(0);
-  int rank = 8 - int.parse(position[1]);
-
-  // Get piece at the specified square
-  String piece = board[rank * 8 + file];
-
-  return piece;
-}
-
-String applyMoveToFen(String fenBoard, String move) {
-  // Parse FEN board
-  List<String> rows = fenBoard.split('/');
-  List<String> board = [];
-  for (String row in rows) {
-    for (int i = 0; i < row.length; i++) {
-      if (row[i] == '1' ||
-          row[i] == '2' ||
-          row[i] == '3' ||
-          row[i] == '4' ||
-          row[i] == '5' ||
-          row[i] == '6' ||
-          row[i] == '7' ||
-          row[i] == '8') {
-        // Add empty squares
-        int count = int.parse(row[i]);
-        for (int j = 0; j < count; j++) {
-          board.add('');
-        }
-      } else {
-        // Add pieces
-        board.add(row[i]);
-      }
-    }
-  }
-
-  // Parse move
-  int fromFile = move[0].codeUnitAt(0) - 'a'.codeUnitAt(0);
-  int fromRank = 8 - int.parse(move[1]);
-
-  int toFile = move[2].codeUnitAt(0) - 'a'.codeUnitAt(0);
-  int toRank = 8 - int.parse(move[3]);
-
-  // Get piece at the source square
-  String piece = board[fromRank * 8 + fromFile];
-
-  // Update board with the move
-  board[fromRank * 8 + fromFile] = '';
-  board[toRank * 8 + toFile] = piece;
-
-  // Convert board back to FEN
-  String updatedFen = '';
-  int emptyCount = 0;
-  for (int i = 0; i < board.length; i++) {
-    if (board[i].isEmpty) {
-      emptyCount++;
-    } else {
-      if (emptyCount > 0) {
-        updatedFen += emptyCount.toString();
-        emptyCount = 0;
-      }
-      updatedFen += board[i];
-    }
-
-    if ((i + 1) % 8 == 0 && i != board.length - 1) {
-      if (emptyCount > 0) {
-        updatedFen += emptyCount.toString();
-        emptyCount = 0;
-      }
-      updatedFen += '/';
-    }
-  }
-
-  return updatedFen;
 }
