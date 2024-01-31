@@ -66,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: defText,
               ));
             } else {
-              final User userStats = snapshot.data!;
+              final User? userStats = snapshot.data;
               return Column(
                 children: [
                   SizedBox(width: screenWidth - 15, child: RadarChartSample1()),
@@ -88,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: defText,
                       ),
                       Text(
-                        '${userStats.rating}',
+                        '${userStats?.rating ?? '1000'}',
                         style: subtitleGreen,
                       ),
                     ],

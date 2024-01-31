@@ -134,6 +134,7 @@ Future<void> loadCsvData() async {
       rating: row[3],
       // ... other fields ...
     );
+
     puzzles.add(puzzle);
   }
   await insertPuzzlesInBatch(puzzles); // Insert puzzles in batch

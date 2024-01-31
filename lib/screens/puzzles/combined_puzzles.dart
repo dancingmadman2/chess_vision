@@ -17,6 +17,9 @@ class CombinedPuzzles extends StatefulWidget {
 }
 
 class _CombinedPuzzlesState extends State<CombinedPuzzles> {
+  final TextEditingController _controller = TextEditingController();
+  late Future _future;
+
   Future<void> markPuzzleAsSolved(String puzzleId) async {
     int userRating = -1;
 
@@ -39,7 +42,6 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     );
 
     // updating user rating
-    // need to implement a better way to add rating to the user
     updateUserRating(userRating + 13);
 
     // removing the sharedpref tag so that new puzzles can be generated
@@ -150,6 +152,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
   @override
   void initState() {
     super.initState();
+    _future = getPuzzleWithStats();
   }
 
   @override
@@ -173,8 +176,8 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
         ),
         centerTitle: true,
       ),
-      body: FutureBuilder<PuzzleWithUserStats>(
-        future: getPuzzleWithStats(),
+      body: FutureBuilder(
+        future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
@@ -215,6 +218,31 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                     height: 15,
                   ),
                   SizedBox(
+                    width: screenWidth / 2,
+                    child: TextField(
+                      controller: _controller,
+                      style: defText,
+                      maxLength: 10,
+                      cursorColor: Colors.white,
+                      decoration: InputDecoration(
+                          counterText: '',
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(width: 2, color: green)),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                  width: 2, color: Colors.white)),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                  width: 2, color: Colors.white))),
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 15,
+                  ),
+                  SizedBox(
                       width: screenWidth - 15,
                       height: 65,
                       child: TextButton(
@@ -228,9 +256,9 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                           /*
                         authenticate the puzzle here
                           */
-                          markPuzzleAsSolved(sand.puzzleId);
-
-                          getPuzzleWithStats();
+                          markPuzzleAsSolved(sand.puzzleId).then((_) {
+                            _future = getPuzzleWithStats();
+                          });
                         },
                         child: Text(
                           'Next Puzzle',
