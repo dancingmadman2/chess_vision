@@ -30,12 +30,14 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
   late Timer _timer;
   bool isFinished = false;
   bool hasBeenWrong = false;
+  bool ratingChanged = false;
   late ValueNotifier<int> _giveUp;
   late ValueNotifier<List<bool>> _answerTF;
   late ValueNotifier<bool> _answer;
   late ValueNotifier<int> _rating;
   late ValueNotifier<bool> _isFinishedNotifier;
-  late ValueNotifier<int> _timeNotifier;
+  late final ValueNotifier<String> _timeNotifier =
+      ValueNotifier<String>("0:00");
 
   Stopwatch stopwatch = Stopwatch();
 
@@ -266,10 +268,14 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     _giveUp = ValueNotifier(0);
     _rating = ValueNotifier(0);
     _isFinishedNotifier = ValueNotifier(false);
-    _timeNotifier = ValueNotifier(0);
+
     stopwatch.start();
     Timer.periodic(const Duration(seconds: 1), (timer) {
-      _timeNotifier.value = stopwatch.elapsed.inSeconds;
+      int totalSeconds = stopwatch.elapsed.inSeconds;
+      int minutes = totalSeconds ~/ 60;
+      int seconds = totalSeconds % 60;
+
+      _timeNotifier.value = "$minutes:${seconds.toString().padLeft(2, '0')}";
     });
 
     _timer = Timer.periodic(const Duration(seconds: 0), (timer) {
@@ -409,11 +415,11 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                       const SizedBox(
                         width: 5,
                       ),
-                      ValueListenableBuilder<int>(
+                      ValueListenableBuilder<String>(
                           valueListenable: _timeNotifier,
                           builder: (context, value, child) {
                             return Text(
-                              '$value s',
+                              '$value',
                               style: defText,
                             );
                           }),
@@ -520,7 +526,9 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                                 ),
                               ),
                               onPressed: () async {
-                                await checkAnswer(sand);
+                                if (_controller.text.isNotEmpty) {
+                                  await checkAnswer(sand);
+                                }
 
                                 /*
                                 markPuzzleAsSolved(sand.puzzleId).then((_) {
@@ -625,8 +633,11 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
         countGiveUp++;
         final prefs = await SharedPreferences.getInstance();
         // removing the sharedpref tag so that new puzzles can be generated
-        updateUserRating(userRating - 8);
-        _rating.value = -8;
+        if (!ratingChanged) {
+          updateUserRating(userRating - 8);
+          _rating.value = -8;
+        }
+
         isFinished = true;
         _isFinishedNotifier.value = isFinished;
 
@@ -667,6 +678,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       countCheckAfterWrongAnswer++;
       updateUserRating(userRating - 8);
       _rating.value = -8;
+      ratingChanged = true;
     }
 
     if (isCorrect[l - 1] && countCheckAnswer < 1) {
@@ -695,6 +707,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       countCheckAfterWrongAnswer = 0;
       isFinished = false;
       _isFinishedNotifier.value = isFinished;
+      ratingChanged = false;
       stopwatch.reset();
       stopwatch.start();
     }
