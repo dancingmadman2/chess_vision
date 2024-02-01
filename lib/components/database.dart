@@ -14,6 +14,7 @@ class Puzzle {
   final String fen;
   final String moves;
   final int rating;
+  final String theme;
   final String? toMove;
 
   // ... other fields ...
@@ -23,6 +24,7 @@ class Puzzle {
     required this.fen,
     required this.moves,
     required this.rating,
+    required this.theme,
     this.toMove,
   });
 
@@ -32,6 +34,7 @@ class Puzzle {
       'fen': fen,
       'moves': moves,
       'rating': rating,
+      'theme': theme,
       'toMove': toMove
     };
   }
@@ -74,6 +77,7 @@ void createDatabase(Database db) {
   moves TEXT,
   toMove TEXT,
   rating INTEGER,
+  theme TEXT,
   solved INTEGER DEFAULT 0
     )
   ''');
@@ -124,7 +128,8 @@ Future<Puzzle?> getPuzzle(String puzzleId) async {
       puzzleId: maps[0]['puzzleId'],
       fen: maps[0]['fen'],
       moves: maps[0]['moves'],
-      rating: maps[0]['rating'],
+      rating: maps[0]['rating'], theme: maps[0]['theme'],
+
       // ... other fields ...
     );
 
@@ -172,9 +177,11 @@ Future<void> loadCsvData() async {
     final row = rowsAsListOfValues[i];
 
     final Puzzle puzzle = Puzzle(
-        puzzleId: row[0], fen: row[1], moves: row[2], rating: row[3], toMove: ''
-        // ... other fields ...
-        );
+      puzzleId: row[0], fen: row[1], moves: row[2], rating: row[3],
+      theme: row[7], toMove: '',
+
+      // ... other fields ...
+    );
 
     puzzles.add(puzzle);
   }
@@ -191,6 +198,21 @@ Future<void> insertPuzzlesInBatch(List<Puzzle> puzzles) async {
   final Database db = await openDatabase(dbPath);
 
   await db.transaction((txn) async {
+    var batch = txn.batch();
+
+    for (var puzzle in puzzles) {
+      batch.insert(
+        'puzzles',
+        puzzle.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+    }
+
+    await batch.commit();
+  });
+
+/*
+    await db.transaction((txn) async {
     for (var puzzle in puzzles) {
       await txn.insert(
         'puzzles',
@@ -199,7 +221,7 @@ Future<void> insertPuzzlesInBatch(List<Puzzle> puzzles) async {
             ConflictAlgorithm.ignore, // Handles duplicate entries
       );
     }
-  });
+  });*/
 }
 
 // Manage database state

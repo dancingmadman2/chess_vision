@@ -12,6 +12,7 @@ import 'screens/home/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await initializeDatabase(); // Initialize the database
 
   runApp(

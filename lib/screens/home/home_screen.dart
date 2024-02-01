@@ -29,7 +29,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _future = fetchUserStats();
-    isDatabaseInit();
   }
 
   Future<void> isDatabaseInit() async {
@@ -63,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         body: FutureBuilder(
-            future: isDbInit ? _future : null,
+            future: _future,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return Center(

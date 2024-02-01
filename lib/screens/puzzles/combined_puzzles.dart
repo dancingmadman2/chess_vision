@@ -94,7 +94,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       puzzleId: maps[0]['puzzleId'],
       fen: maps[0]['fen'],
       moves: maps[0]['moves'],
-      rating: maps[0]['rating'],
+      rating: maps[0]['rating'], theme: maps[0]['theme'],
 
       // ... other fields ...
     );
@@ -110,14 +110,15 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     if (maps.isNotEmpty) {
       // ... create and return Puzzle object ...
       final puzzle = Puzzle(
-          puzzleId: maps[0]['puzzleId'],
-          fen: maps[0]['fen'],
-          moves: maps[0]['moves'],
-          rating: maps[0]['rating'],
-          toMove: toMove
+        puzzleId: maps[0]['puzzleId'],
+        fen: maps[0]['fen'],
+        moves: maps[0]['moves'],
+        rating: maps[0]['rating'],
+        theme: maps[0]['theme'],
+        toMove: toMove,
 
-          // ... other fields ...
-          );
+        // ... other fields ...
+      );
 
       return puzzle;
     }
@@ -166,6 +167,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       fen: maps[0]['fen'],
       moves: maps[0]['moves'],
       rating: maps[0]['rating'],
+      theme: maps[0]['theme'],
     );
     parser = f.fen.split(' ');
     toMove = parser[1];
@@ -181,6 +183,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
           fen: maps[0]['fen'],
           moves: maps[0]['moves'],
           rating: maps[0]['rating'],
+          theme: maps[0]['theme'],
           toMove: toMove
           // ... other fields ...
           );
