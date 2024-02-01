@@ -136,7 +136,13 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
 
     String? currentPuzzleId = prefs.getString('currentPuzzleId');
     String whereClause = 'rating >= ? AND rating <= ? AND solved = 0';
-    List<dynamic> whereArgs = [userRating - 50, userRating + 50];
+    List<dynamic> whereArgs = [];
+
+    if (userRating > 980) {
+      whereArgs = [userRating - 50, userRating + 50];
+    } else {
+      whereArgs = [1000, 1050];
+    }
 
     // Exclude the current puzzle ID if it exists
     if (currentPuzzleId != null) {

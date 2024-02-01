@@ -42,11 +42,13 @@ class User {
   final int rating;
   final int puzzlesPlayed;
   final int puzzlesWon;
+  final int puzzlesLost;
 
   User({
     required this.uid,
     required this.rating,
     required this.puzzlesPlayed,
+    required this.puzzlesLost,
     required this.puzzlesWon,
   });
 
@@ -55,7 +57,8 @@ class User {
       'userId': uid,
       'rating': rating,
       'puzzlesPlayed': puzzlesPlayed,
-      'puzzlesWon': puzzlesWon
+      'puzzlesWon': puzzlesWon,
+      'puzzlesLost': puzzlesLost
     };
   }
 }
@@ -69,6 +72,7 @@ void createDatabase(Database db) {
   puzzleId TEXT PRIMARY KEY,
   fen TEXT,
   moves TEXT,
+  toMove TEXT,
   rating INTEGER,
   solved INTEGER DEFAULT 0
     )
@@ -79,11 +83,12 @@ void createDatabase(Database db) {
     CREATE TABLE UserStats(
       id INTEGER PRIMARY KEY,
       rating INTEGER,
-      gamesPlayed INTEGER,
-      gamesWon INTEGER
+      puzzlesPlayed INTEGER,
+      puzzlesWon INTEGER,
+      puzzlesLost INTEGER
     )
   ''');
-  insertUserStats(1000, 0, 0);
+  insertUserStats(1000, 0, 0, 0);
 }
 
 Future<User?> getUserStats() async {
@@ -93,10 +98,12 @@ Future<User?> getUserStats() async {
       await db.query('UserStats', where: 'id = ?', whereArgs: [1]);
   if (maps.isNotEmpty) {
     final user = User(
-        uid: maps[0]['id'],
-        rating: maps[0]['rating'],
-        puzzlesPlayed: maps[0]['gamesPlayed'],
-        puzzlesWon: maps[0]['gamesWon']);
+      uid: maps[0]['id'],
+      rating: maps[0]['rating'],
+      puzzlesPlayed: maps[0]['puzzlesPlayed'],
+      puzzlesWon: maps[0]['puzzlesWon'],
+      puzzlesLost: maps[0]['puzzlesLost'],
+    );
 
     return user;
   }
@@ -126,14 +133,16 @@ Future<Puzzle?> getPuzzle(String puzzleId) async {
   return null;
 }
 
-Future<void> insertUserStats(int rating, int gamesPlayed, int gamesWon) async {
+Future<void> insertUserStats(
+    int rating, int puzzlesPlayed, int puzzlesWon, int puzzlesLost) async {
   final dbPath = await getDatabasePath();
   final db = await openDatabase(dbPath);
   await db.insert('UserStats', {
     'id': 1,
     'rating': rating,
-    'gamesPlayed': gamesPlayed,
-    'gamesWon': gamesWon
+    'puzzlesPlayed': puzzlesPlayed,
+    'puzzlesWon': puzzlesWon,
+    'puzzlesLost': puzzlesLost
   });
 }
 
@@ -141,6 +150,14 @@ Future<void> updateUserRating(int newRating) async {
   final dbPath = await getDatabasePath();
   final db = await openDatabase(dbPath);
   await db.update('UserStats', {'rating': newRating},
+      where: 'id = ?', whereArgs: [1]);
+}
+
+Future<void> updateUserStats(int puzzlesPlayed, int puzzlesWon) async {
+  final dbPath = await getDatabasePath();
+  final db = await openDatabase(dbPath);
+  await db.update(
+      'UserStats', {'puzzlesPlayed': puzzlesPlayed, 'puzzlesWon': puzzlesWon},
       where: 'id = ?', whereArgs: [1]);
 }
 
@@ -155,12 +172,9 @@ Future<void> loadCsvData() async {
     final row = rowsAsListOfValues[i];
 
     final Puzzle puzzle = Puzzle(
-      puzzleId: row[0],
-      fen: row[1],
-      moves: row[2],
-      rating: row[3],
-      // ... other fields ...
-    );
+        puzzleId: row[0], fen: row[1], moves: row[2], rating: row[3], toMove: ''
+        // ... other fields ...
+        );
 
     puzzles.add(puzzle);
   }
