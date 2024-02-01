@@ -13,6 +13,13 @@ TextStyle buttonText = GoogleFonts.lato(
     fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold);
 TextStyle defText = GoogleFonts.lato(
     fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold);
+TextStyle defTextRed = GoogleFonts.lato(
+    fontSize: 16, color: Colors.red, fontWeight: FontWeight.bold);
+
+TextStyle defTextBlue = GoogleFonts.lato(
+    fontSize: 16, color: Colors.blue, fontWeight: FontWeight.bold);
+TextStyle defTextGreen =
+    GoogleFonts.lato(fontSize: 16, color: green, fontWeight: FontWeight.bold);
 TextStyle defTextLight = GoogleFonts.lato(
   fontSize: 14,
   color: Colors.white,
@@ -27,6 +34,8 @@ TextStyle title30 = GoogleFonts.lato(
     fontSize: 30, color: Colors.white, fontWeight: FontWeight.w800);
 TextStyle subtitleGreen =
     GoogleFonts.lato(fontSize: 25, color: green, fontWeight: FontWeight.w700);
+TextStyle subtitleRed = GoogleFonts.lato(
+    fontSize: 25, color: Colors.red, fontWeight: FontWeight.w700);
 TextStyle subtitle = GoogleFonts.lato(
     fontSize: 25, color: Colors.white, fontWeight: FontWeight.w700);
 TextStyle subtitleBlue = GoogleFonts.lato(

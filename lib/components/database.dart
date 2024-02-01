@@ -14,6 +14,8 @@ class Puzzle {
   final String fen;
   final String moves;
   final int rating;
+  final String? toMove;
+
   // ... other fields ...
 
   Puzzle({
@@ -21,6 +23,7 @@ class Puzzle {
     required this.fen,
     required this.moves,
     required this.rating,
+    this.toMove,
   });
 
   Map<String, dynamic> toMap() {
@@ -29,6 +32,7 @@ class Puzzle {
       'fen': fen,
       'moves': moves,
       'rating': rating,
+      'toMove': toMove
     };
   }
 }

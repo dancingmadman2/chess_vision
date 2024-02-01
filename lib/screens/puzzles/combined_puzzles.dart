@@ -24,21 +24,22 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
   int index = 0;
   List<bool> isCorrect = List.filled(20, false);
   int tryGiveUp = 0;
-
+  int countCheckAnswer = 0;
+  int countCheckAfterWrongAnswer = 0;
+  int countGiveUp = 0;
+  late Timer _timer;
+  bool isFinished = false;
+  bool hasBeenWrong = false;
   late ValueNotifier<int> _giveUp;
-  late ValueNotifier<List<bool>> _answer;
-  late ValueNotifier<bool> _isWrong;
-  late ValueNotifier<bool> _isRight;
+  late ValueNotifier<List<bool>> _answerTF;
+  late ValueNotifier<bool> _answer;
+  late ValueNotifier<int> _rating;
+  late ValueNotifier<bool> _isFinishedNotifier;
+  late ValueNotifier<int> _timeNotifier;
+
+  Stopwatch stopwatch = Stopwatch();
 
   Future<void> markPuzzleAsSolved(String puzzleId) async {
-    int userRating = -1;
-
-    // fetch the user rating
-    var userStats = await getUserStats();
-    if (userStats != null) {
-      userRating = userStats.rating;
-    }
-
     final prefs = await SharedPreferences.getInstance();
     final dbPath = await getDatabasePath();
     final db = await openDatabase(dbPath);
@@ -51,10 +52,8 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       whereArgs: [puzzleId],
     );
 
-    // updating user rating
-    updateUserRating(userRating + 13);
-
     // removing the sharedpref tag so that new puzzles can be generated
+    _answer.value = false;
     setState(() {
       prefs.remove('currentPuzzleId');
     });
@@ -86,16 +85,37 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       where: 'puzzleId = ?',
       whereArgs: [puzzleId],
     );
+    List<String> parser = [];
+    String toMove = '';
+
+    final f = Puzzle(
+      puzzleId: maps[0]['puzzleId'],
+      fen: maps[0]['fen'],
+      moves: maps[0]['moves'],
+      rating: maps[0]['rating'],
+
+      // ... other fields ...
+    );
+
+    parser = f.fen.split(' ');
+    toMove = parser[1];
+    if (toMove == 'b') {
+      toMove = 'White to move';
+    } else {
+      toMove = 'Black to move';
+    }
 
     if (maps.isNotEmpty) {
       // ... create and return Puzzle object ...
       final puzzle = Puzzle(
-        puzzleId: maps[0]['puzzleId'],
-        fen: maps[0]['fen'],
-        moves: maps[0]['moves'],
-        rating: maps[0]['rating'],
-        // ... other fields ...
-      );
+          puzzleId: maps[0]['puzzleId'],
+          fen: maps[0]['fen'],
+          moves: maps[0]['moves'],
+          rating: maps[0]['rating'],
+          toMove: toMove
+
+          // ... other fields ...
+          );
 
       return puzzle;
     }
@@ -130,14 +150,32 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       limit: 1,
     );
 
+    List<String> parser = [];
+    String toMove = '';
+
+    final f = Puzzle(
+      puzzleId: maps[0]['puzzleId'],
+      fen: maps[0]['fen'],
+      moves: maps[0]['moves'],
+      rating: maps[0]['rating'],
+    );
+    parser = f.fen.split(' ');
+    toMove = parser[1];
+    if (toMove == 'b') {
+      toMove = 'White to move';
+    } else {
+      toMove = 'Black to move';
+    }
+
     if (maps.isNotEmpty) {
       final puzzle = Puzzle(
-        puzzleId: maps[0]['puzzleId'],
-        fen: maps[0]['fen'],
-        moves: maps[0]['moves'],
-        rating: maps[0]['rating'],
-        // ... other fields ...
-      );
+          puzzleId: maps[0]['puzzleId'],
+          fen: maps[0]['fen'],
+          moves: maps[0]['moves'],
+          rating: maps[0]['rating'],
+          toMove: toMove
+          // ... other fields ...
+          );
       prefs.setString('currentPuzzleId', puzzle.puzzleId);
 
       return puzzle;
@@ -190,23 +228,32 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       }
     }
     print(solution);
+
+    // Right answer
     if (_controller.text.toString().toLowerCase() ==
         solution[index].toLowerCase()) {
       isAuthenticated = true;
 
-      _answer.value = List<bool>.from(_answer.value)..[0] = true;
+      _answerTF.value = List<bool>.from(_answerTF.value)..[0] = true;
 
-      Timer.periodic(const Duration(milliseconds: 1000), (timer) {
-        _answer.value = List<bool>.from(_answer.value)..[0] = false;
-        timer.cancel();
-      });
-    } else {
-      _answer.value = List<bool>.from(_answer.value)..[1] = true;
+      if (!_timer.isActive) {
+        _timer = Timer.periodic(const Duration(milliseconds: 1000), (timer) {
+          _answerTF.value = List<bool>.from(_answerTF.value)..[0] = false;
+          _timer.cancel();
+        });
+      }
+    }
+    // Wrong answer
+    else {
+      _answerTF.value = List<bool>.from(_answerTF.value)..[1] = true;
+      _answer.value = false;
 
-      Timer.periodic(const Duration(milliseconds: 1000), (timer) {
-        _answer.value = List<bool>.from(_answer.value)..[1] = false;
-        timer.cancel();
-      });
+      if (!_timer.isActive) {
+        _timer = Timer.periodic(const Duration(milliseconds: 1000), (timer) {
+          _answerTF.value = List<bool>.from(_answerTF.value)..[1] = false;
+          _timer.cancel();
+        });
+      }
     }
     return isAuthenticated;
   }
@@ -214,15 +261,41 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
   @override
   void initState() {
     super.initState();
+
     _future = getPuzzleWithStats();
     _giveUp = ValueNotifier(0);
-    _isWrong = ValueNotifier(false);
-    _isRight = ValueNotifier(false);
-    _answer = ValueNotifier<List<bool>>(List<bool>.generate(
+    _rating = ValueNotifier(0);
+    _isFinishedNotifier = ValueNotifier(false);
+    _timeNotifier = ValueNotifier(0);
+    stopwatch.start();
+    Timer.periodic(const Duration(seconds: 1), (timer) {
+      _timeNotifier.value = stopwatch.elapsed.inSeconds;
+    });
+
+    _timer = Timer.periodic(const Duration(seconds: 0), (timer) {
+      // Perform your periodic logic here
+      _timer.cancel();
+    });
+
+    _answerTF = ValueNotifier<List<bool>>(List<bool>.generate(
       2, // Replace with the desired number of items in the list
       (index) =>
           false, // Initialize each item with false or true based on your requirements
     ));
+    _answer = ValueNotifier(false);
+  }
+
+  @override
+  void dispose() {
+    if (mounted) {
+      _giveUp.dispose();
+      _answerTF.dispose();
+      _controller.dispose();
+      _timer.cancel();
+      stopwatch.stop();
+
+      super.dispose();
+    }
   }
 
   @override
@@ -294,6 +367,19 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                         '${stats.rating}',
                         style: subtitleGreen,
                       ),
+                      const SizedBox(
+                        width: 5,
+                      ),
+                      ValueListenableBuilder<int?>(
+                          valueListenable: _rating,
+                          builder: (context, value, child) {
+                            return Text(
+                              value! != 0
+                                  ? (value > 0 ? ('+$value') : (' $value'))
+                                  : '',
+                              style: value > 0 ? defTextGreen : defTextRed,
+                            );
+                          }),
                     ],
                   ),
                   Row(
@@ -307,24 +393,70 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                       ),
                       Text(
                         '${sand.rating}',
-                        style: subtitleBlue,
+                        style: subtitle,
                       ),
                     ],
                   ),
                   const SizedBox(
                     height: 50,
                   ),
+                  Row(
+                    children: [
+                      const SizedBox(
+                        width: 5,
+                      ),
+                      Icon(CupertinoIcons.time, size: 32, color: green),
+                      const SizedBox(
+                        width: 5,
+                      ),
+                      ValueListenableBuilder<int>(
+                          valueListenable: _timeNotifier,
+                          builder: (context, value, child) {
+                            return Text(
+                              '$value s',
+                              style: defText,
+                            );
+                          }),
+                    ],
+                  ),
                   Text(
                     'Puzzle: ${sand.puzzleId}',
                     style: defText,
                   ),
                   const SizedBox(
-                    height: 30,
+                    height: 15,
+                  ),
+                  Row(
+                    children: [
+                      const SizedBox(
+                        width: 5,
+                      ),
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                            border: Border.all(width: 2, color: Colors.white),
+                            borderRadius: BorderRadius.circular(8),
+                            color: sand.toMove!.contains('W')
+                                ? Colors.white
+                                : Colors.black),
+                      ),
+                      const SizedBox(
+                        width: 5,
+                      ),
+                      Text(
+                        sand.toMove ?? '',
+                        style: defText,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(
+                    height: 15,
                   ),
                   SizedBox(
                     width: screenWidth / 2,
                     child: ValueListenableBuilder<List<bool?>>(
-                        valueListenable: _answer,
+                        valueListenable: _answerTF,
                         builder: (context, value, child) {
                           return TextField(
                             controller: _controller,
@@ -340,9 +472,9 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                                     borderRadius: BorderRadius.circular(8),
                                     borderSide: BorderSide(
                                         width: 2,
-                                        color: _answer.value[1]
+                                        color: _answerTF.value[1]
                                             ? Colors.red
-                                            : _answer.value[0]
+                                            : _answerTF.value[0]
                                                 ? green
                                                 : Colors.white)),
                                 errorBorder: OutlineInputBorder(
@@ -350,19 +482,20 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                                     borderSide: BorderSide(
                                         width: 2,
                                         color:
-                                            _answer.value[0] ? green : mono)),
+                                            _answerTF.value[0] ? green : mono)),
                                 border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
                                     borderSide: BorderSide(
                                         width: 2,
                                         color:
-                                            _answer.value[0] ? green : mono)),
+                                            _answerTF.value[0] ? green : mono)),
                                 enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
                                     borderSide: BorderSide(
                                         width: 2,
-                                        color:
-                                            _answer.value[0] ? green : mono))),
+                                        color: _answerTF.value[0]
+                                            ? green
+                                            : mono))),
                           );
                         }),
                   ),
@@ -425,11 +558,40 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                                   );
                                 }),
                           )),
+
+                      //
                       const SizedBox(
                         width: 15,
                       ),
                     ],
                   ),
+                  const SizedBox(
+                    height: 30,
+                  ),
+                  ValueListenableBuilder<bool?>(
+                      valueListenable: _isFinishedNotifier,
+                      builder: (context, value, child) {
+                        return value!
+                            ? SizedBox(
+                                width: screenWidth - 15,
+                                height: 70,
+                                child: TextButton(
+                                  style: TextButton.styleFrom(
+                                    backgroundColor: mono,
+                                    shape: const RoundedRectangleBorder(
+                                      borderRadius:
+                                          BorderRadius.all(Radius.circular(8)),
+                                    ),
+                                  ),
+                                  onPressed: () => nextPuzzle(sand.puzzleId),
+                                  child: Text(
+                                    'Next Puzzle',
+                                    style: buttonText,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ))
+                            : const Center();
+                      }),
                 ],
               ),
             );
@@ -440,44 +602,101 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
   }
 
   Future<void> giveUp() async {
-    tryGiveUp++;
-    _giveUp.value = tryGiveUp;
+    if (!isFinished) {
+      int userRating = -1;
 
-    Timer.periodic(const Duration(seconds: 2), (timer) {
-      tryGiveUp = 0;
+      // fetch the user rating
+      var userStats = await getUserStats();
+      if (userStats != null) {
+        userRating = userStats.rating;
+      }
+      tryGiveUp++;
       _giveUp.value = tryGiveUp;
-      timer.cancel();
-    });
-    if (tryGiveUp > 1) {
-      final prefs = await SharedPreferences.getInstance();
-      // removing the sharedpref tag so that new puzzles can be generated
-      setState(() {
-        prefs.remove('currentPuzzleId');
-      });
+
+      if (!_timer.isActive) {
+        _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
+          tryGiveUp = 0;
+          _giveUp.value = tryGiveUp;
+          _timer.cancel();
+        });
+      }
+
+      if (tryGiveUp == 2 && countGiveUp < 1) {
+        countGiveUp++;
+        final prefs = await SharedPreferences.getInstance();
+        // removing the sharedpref tag so that new puzzles can be generated
+        updateUserRating(userRating - 8);
+        _rating.value = -8;
+        isFinished = true;
+        _isFinishedNotifier.value = isFinished;
+
+        stopwatch.stop();
+        setState(() {
+          prefs.remove('currentPuzzleId');
+        });
+      }
     }
   }
 
   Future<void> checkAnswer(Puzzle sand) async {
+    int userRating = -1;
+
+    // fetch the user rating
+    var userStats = await getUserStats();
+    if (userStats != null) {
+      userRating = userStats.rating;
+    }
     List<String> movesArray = [];
 
     movesArray = sand.moves.split(' ');
     int l = movesArray.length ~/ 2;
 
-    if (index < l) {
+    if (index < l && !isFinished) {
       isCorrect[index] = (await authenticateSolution(sand.puzzleId, index));
     }
 
     if (isCorrect[index]) {
       index++;
       _controller.clear();
+    } else {
+      hasBeenWrong = true;
+    }
+    _answer.value = !hasBeenWrong;
+
+    if (hasBeenWrong && countCheckAfterWrongAnswer < 1) {
+      countCheckAfterWrongAnswer++;
+      updateUserRating(userRating - 8);
+      _rating.value = -8;
     }
 
-    if (isCorrect[l - 1]) {
+    if (isCorrect[l - 1] && countCheckAnswer < 1) {
+      countCheckAnswer++;
       index = 0;
       isCorrect.fillRange(0, 20, false);
-      markPuzzleAsSolved(sand.puzzleId).then((_) {
+      isFinished = true;
+      _isFinishedNotifier.value = isFinished;
+
+      if (_answer.value) {
+        updateUserRating(userRating + 13);
+        _rating.value = 13;
+        stopwatch.stop();
+      }
+    }
+  }
+
+  void nextPuzzle(String puzzleId) {
+    if (isFinished || countGiveUp == 1) {
+      markPuzzleAsSolved(puzzleId).then((_) {
         _future = getPuzzleWithStats();
       });
+      countCheckAnswer = 0;
+      countGiveUp = 0;
+      _rating.value = 0;
+      countCheckAfterWrongAnswer = 0;
+      isFinished = false;
+      _isFinishedNotifier.value = isFinished;
+      stopwatch.reset();
+      stopwatch.start();
     }
   }
 }
