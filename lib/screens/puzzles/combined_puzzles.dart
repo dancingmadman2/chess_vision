@@ -218,16 +218,30 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     String xFen = fen;
     // Loop to parse the moves
     for (int i = 0; i < movesArray.length; i++) {
-      //
-      String parsedMove =
-          '${getPieceAtSquare(xFen, movesArray[i].substring(0, 2)).toUpperCase()} ${movesArray[i].substring(2, 4).toLowerCase()}';
-      //
+      String parsedMove = '';
+      //if piece is a pawn
+      if (getPieceAtSquare(xFen, movesArray[i].substring(0, 2)) == 'p') {
+        parsedMove = movesArray[i].substring(2, 4).toLowerCase();
+      } else {
+        parsedMove =
+            '${getPieceAtSquare(xFen, movesArray[i].substring(0, 2)).toUpperCase()} ${movesArray[i].substring(2, 4).toLowerCase()}';
+      }
+
+      // Capturing a piece
       if (getPieceAtSquare(xFen, movesArray[i].substring(2, 4)).toLowerCase() !=
           '') {
-        parsedMove =
-            '${getPieceAtSquare(xFen, movesArray[i].substring(0, 2)).toUpperCase()}x ${movesArray[i].substring(2, 4).toLowerCase()}';
+        if (getPieceAtSquare(xFen, movesArray[i].substring(0, 2)) == 'p') {
+          parsedMove =
+              '${movesArray[i].substring(0, 1)}x ${movesArray[i].substring(2, 4).toLowerCase()}';
+        } else {
+          parsedMove =
+              '${getPieceAtSquare(xFen, movesArray[i].substring(0, 2)).toUpperCase()}x ${movesArray[i].substring(2, 4).toLowerCase()}';
+        }
       }
       parsedMove = parsedMove.replaceAll(' ', '');
+      if (isCheck(xFen)) {
+        parsedMove = '$parsedMove+';
+      }
       parsedMoves.add(parsedMove);
       xFen = applyMoveToFen(xFen, movesArray[i]);
     }
@@ -535,9 +549,8 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                                 ),
                               ),
                               onPressed: () async {
-                                if (_controller.text.isNotEmpty) {
-                                  await checkAnswer(sand);
-                                }
+                                if (_controller.text.isNotEmpty) {}
+                                await checkAnswer(sand);
 
                                 /*
                                 markPuzzleAsSolved(sand.puzzleId).then((_) {

@@ -1,4 +1,5 @@
-import 'package:chess_vision/components/database.dart';
+//import 'package:chess_vision/components/database.dart';
+import 'package:chess_vision/components/helper.dart';
 import 'package:chess_vision/screens/minigames/minigames_screen.dart';
 import 'package:chess_vision/screens/more/more_screen.dart';
 import 'package:chess_vision/screens/puzzles/puzzles_screen.dart';
@@ -12,8 +13,8 @@ import 'screens/home/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await initializeDatabase(); // Initialize the database
+  DatabaseHelper db = DatabaseHelper();
+  await db.initializeDatabase();
 
   runApp(
     const MyApp(),

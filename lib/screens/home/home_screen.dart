@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../components/database.dart';
+import '../../components/helper.dart';
 import '../../styles.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -20,8 +20,10 @@ class _HomeScreenState extends State<HomeScreen> {
   late Future _future;
   bool isDbInit = false;
   Future<User?> fetchUserStats() async {
+    DatabaseHelper db = DatabaseHelper();
     User? user;
-    user = await getUserStats();
+    user = await db.getUserStats();
+    print(user);
     return user;
   }
 
@@ -103,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: defText,
                         ),
                         Text(
-                          '${userStats?.rating ?? '1000'}',
+                          '${userStats?.rating ?? '31'}',
                           style: subtitleGreen,
                         ),
                       ],

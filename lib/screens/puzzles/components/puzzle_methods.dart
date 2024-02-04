@@ -1,4 +1,4 @@
-import 'package:chess_vision/components/database.dart';
+import '../../../components/database.dart';
 
 class PuzzleWithUserStats {
   final Puzzle? puzzle;
@@ -39,6 +39,11 @@ String getPieceAtSquare(String fenBoard, String position) {
 
   // Get piece at the specified square
   String piece = board[rank * 8 + file];
+
+  // Check if the piece is a pawn and return the position
+  if (piece.toLowerCase() == 'p') {
+    return 'p';
+  }
 
   return piece;
 }
@@ -107,4 +112,18 @@ String applyMoveToFen(String fenBoard, String move) {
   }
 
   return updatedFen;
+}
+
+bool isCheck(String fen) {
+  // Split the FEN string to extract relevant information
+  List<String> parts = fen.split(' ');
+  String boardState = parts[0];
+  String activeColor = parts[1];
+
+  // Find the position of the king based on the active color
+  int kingIndex =
+      activeColor == 'w' ? boardState.indexOf('K') : boardState.indexOf('k');
+
+  // Check if the king is under attack (check)
+  return false;
 }

@@ -66,7 +66,12 @@ class User {
   }
 }
 
-const String _dbName = 'Database.db';
+class DatabaseHelper {
+  static const _dbName = "Database.db";
+  static const _version = 1;
+}
+
+//const String _dbName = 'Database.db';
 // Create the database tables
 void createDatabase(Database db) {
   // Create table for puzzles
@@ -190,7 +195,7 @@ Future<void> loadCsvData() async {
 
 Future<String> getDatabasePath() async {
   final directory = await getApplicationDocumentsDirectory();
-  return join(directory.path, _dbName);
+  return join(directory.path, DatabaseHelper._dbName);
 }
 
 Future<void> insertPuzzlesInBatch(List<Puzzle> puzzles) async {
@@ -231,25 +236,11 @@ Future<void> initializeDatabase() async {
 
   if (prefs.getBool('isDatabaseInitialized') == null ||
       prefs.getBool('isDatabaseInitialized') == false) {
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      Get.rawSnackbar(
-          messageText: Text(
-            'Database initializing for the first time...',
-            textAlign: TextAlign.center,
-            style: defText,
-          ),
-          isDismissible: false,
-          duration: const Duration(days: 1),
-          backgroundColor: mono,
-          borderRadius: 8,
-          icon: const Icon(
-            Icons.downloading_rounded,
-            color: Colors.white,
-          ),
-          margin: const EdgeInsets.only(bottom: 65),
-          snackStyle: SnackStyle.GROUNDED);
-    });
-    openDatabase(dbPath).then((db) {
+    dbInitSnackbar();
+    openDatabase(
+      dbPath,
+      version: 1,
+    ).then((db) {
       createDatabase(db);
       loadCsvData().then((_) {
         // Dismiss the SnackBar
@@ -258,11 +249,47 @@ Future<void> initializeDatabase() async {
         prefs.setBool('isDatabaseInitialized', true);
       });
     });
-    /*
-    final Database db = await openDatabase(dbPath);
-    createDatabase(db);
-    loadCsvData();
-
-    prefs.setBool('isDatabaseInitialized', true);*/
   }
+}
+
+void dbInitSnackbar() {
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    Get.rawSnackbar(
+        messageText: Text(
+          'Database initializing for the first time...',
+          textAlign: TextAlign.center,
+          style: defText,
+        ),
+        isDismissible: false,
+        duration: const Duration(days: 1),
+        backgroundColor: mono,
+        borderRadius: 8,
+        icon: const Icon(
+          Icons.downloading_rounded,
+          color: Colors.white,
+        ),
+        margin: const EdgeInsets.only(bottom: 65),
+        snackStyle: SnackStyle.GROUNDED);
+  });
+}
+
+void dbUpgradeSnackbar() {
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    Get.rawSnackbar(
+        messageText: Text(
+          'Database is upgrading...',
+          textAlign: TextAlign.center,
+          style: defText,
+        ),
+        isDismissible: false,
+        duration: const Duration(days: 1),
+        backgroundColor: mono,
+        borderRadius: 8,
+        icon: const Icon(
+          Icons.downloading_rounded,
+          color: Colors.white,
+        ),
+        margin: const EdgeInsets.only(bottom: 65),
+        snackStyle: SnackStyle.GROUNDED);
+  });
 }
