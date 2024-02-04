@@ -522,7 +522,7 @@ class _SandboxState extends State<Sandbox> {
         countGiveUp++;
         final prefs = await SharedPreferences.getInstance();
         // removing the sharedpref tag so that new puzzles can be generated
-        if (!ratingChanged) {
+        if (!ratingChanged && prefs.getBool('doneBefore') == null) {
           db.updateUserRating(userRating - 8);
           _rating.value = -8;
         }
@@ -533,6 +533,7 @@ class _SandboxState extends State<Sandbox> {
         stopwatch.stop();
         setState(() {
           prefs.remove('currentPuzzleId');
+          prefs.remove('doneBefore');
         });
       }
     }
@@ -565,8 +566,10 @@ class _SandboxState extends State<Sandbox> {
     }
     _answer.value = !hasBeenWrong;
 
-    if (hasBeenWrong && countCheckAfterWrongAnswer < 1) {
-      prefs.setBool('hasBeenWrong', true);
+    if (hasBeenWrong &&
+        countCheckAfterWrongAnswer < 1 &&
+        prefs.getBool('doneBefore') == null) {
+      prefs.setBool('doneBefore', true);
       countCheckAfterWrongAnswer++;
       db.updateUserRating(userRating - 8);
       _rating.value = -8;
@@ -581,7 +584,7 @@ class _SandboxState extends State<Sandbox> {
       _isFinishedNotifier.value = isFinished;
       prefs.remove('currentPuzzleId');
 
-      if (_answer.value && prefs.getBool('hasBeenWrong') == null) {
+      if (_answer.value && prefs.getBool('doneBefore') == null) {
         db.updateUserRating(userRating + 13);
         _rating.value = 13;
         stopwatch.stop();
@@ -604,7 +607,7 @@ class _SandboxState extends State<Sandbox> {
       ratingChanged = false;
       stopwatch.reset();
       stopwatch.start();
-      prefs.remove('hasBeenWrong');
+      prefs.remove('doneBefore');
     }
   }
 }
