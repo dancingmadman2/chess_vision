@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sqflite/sqflite.dart';
 
 class Sandbox extends StatefulWidget {
   const Sandbox({super.key});
@@ -70,6 +69,10 @@ class _SandboxState extends State<Sandbox> {
 
     user = await db.getUserStats(); // Get user stats
 
+    // Loop to parse the moves
+    List<String> solution = parseSolution(puzzle!.moves, puzzle.fen);
+    print(solution);
+
     return PuzzleWithUserStats(puzzle: puzzle, userStats: user);
   }
 
@@ -83,9 +86,44 @@ class _SandboxState extends State<Sandbox> {
       moves = puzzle.moves;
       fen = puzzle.fen;
     }
-    List<String> movesArray = [];
-    List<String> parsedMoves = [];
-    movesArray = moves.split(' ');
+
+    // Loop to parse the moves
+    List<String> solution = parseSolution(moves, fen);
+    print(solution);
+
+    // Right answer
+    if (_controller.text.toString().toLowerCase() ==
+        solution[index].toLowerCase()) {
+      isAuthenticated = true;
+
+      _answerTF.value = List<bool>.from(_answerTF.value)..[0] = true;
+
+      if (!_timer.isActive) {
+        _timer = Timer.periodic(const Duration(milliseconds: 1000), (timer) {
+          _answerTF.value = List<bool>.from(_answerTF.value)..[0] = false;
+          _timer.cancel();
+        });
+      }
+    }
+    // Wrong answer
+    else {
+      _answerTF.value = List<bool>.from(_answerTF.value)..[1] = true;
+      _answer.value = false;
+
+      if (!_timer.isActive) {
+        _timer = Timer.periodic(const Duration(milliseconds: 1000), (timer) {
+          _answerTF.value = List<bool>.from(_answerTF.value)..[1] = false;
+          _timer.cancel();
+        });
+      }
+    }
+    return isAuthenticated;
+  }
+
+  List<String> parseSolution(
+    String moves,
+    String xFen,
+  ) {
     /*
     parsing logic for solution
      moves:  h4h5 d4f2 g3b3 c2b3 a2b3 f2e1
@@ -95,8 +133,10 @@ class _SandboxState extends State<Sandbox> {
      update current board(fen) after each move
      iterate
     */
-    String xFen = fen;
-    // Loop to parse the moves
+    List<String> movesArray = [];
+
+    movesArray = moves.split(' ');
+    List<String> parsedMoves = [];
     for (int i = 0; i < movesArray.length; i++) {
       String parsedMove = '';
       //if piece is a pawn
@@ -132,35 +172,7 @@ class _SandboxState extends State<Sandbox> {
         solution.add(parsedMoves[i]);
       }
     }
-    print(solution);
-
-    // Right answer
-    if (_controller.text.toString().toLowerCase() ==
-        solution[index].toLowerCase()) {
-      isAuthenticated = true;
-
-      _answerTF.value = List<bool>.from(_answerTF.value)..[0] = true;
-
-      if (!_timer.isActive) {
-        _timer = Timer.periodic(const Duration(milliseconds: 1000), (timer) {
-          _answerTF.value = List<bool>.from(_answerTF.value)..[0] = false;
-          _timer.cancel();
-        });
-      }
-    }
-    // Wrong answer
-    else {
-      _answerTF.value = List<bool>.from(_answerTF.value)..[1] = true;
-      _answer.value = false;
-
-      if (!_timer.isActive) {
-        _timer = Timer.periodic(const Duration(milliseconds: 1000), (timer) {
-          _answerTF.value = List<bool>.from(_answerTF.value)..[1] = false;
-          _timer.cancel();
-        });
-      }
-    }
-    return isAuthenticated;
+    return solution;
   }
 
   @override
@@ -322,7 +334,7 @@ class _SandboxState extends State<Sandbox> {
                           valueListenable: _timeNotifier,
                           builder: (context, value, child) {
                             return Text(
-                              '$value',
+                              value,
                               style: defText,
                             );
                           }),

@@ -23,7 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
     DatabaseHelper db = DatabaseHelper();
     User? user;
     user = await db.getUserStats();
-    print(user);
+
     return user;
   }
 

@@ -1,6 +1,6 @@
 import 'package:chess_vision/styles.dart';
 import 'package:csv/csv.dart';
-import 'package:flutter/cupertino.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -15,7 +15,8 @@ class Puzzle {
   final String moves;
   final int rating;
   final String theme;
-  final String? toMove;
+  final String toMove;
+  final String pgn;
 
   // ... other fields ...
 
@@ -25,7 +26,8 @@ class Puzzle {
     required this.moves,
     required this.rating,
     required this.theme,
-    this.toMove,
+    required this.toMove,
+    required this.pgn,
   });
 
   Map<String, dynamic> toMap() {
@@ -35,7 +37,8 @@ class Puzzle {
       'moves': moves,
       'rating': rating,
       'theme': theme,
-      'toMove': toMove
+      'toMove': toMove,
+      'pgn': pgn
     };
   }
 }
@@ -97,7 +100,9 @@ class DatabaseHelper {
   toMove TEXT,
   rating INTEGER,
   theme TEXT,
-  solved INTEGER DEFAULT 0
+  solved INTEGER DEFAULT 0,
+  toMove TEXT,
+  pgn TEXT
     )
   ''');
 
@@ -125,7 +130,7 @@ class DatabaseHelper {
 
   Future<void> loadCsvData() async {
     final String csvData =
-        await rootBundle.loadString('assets/data/subset.csv');
+        await rootBundle.loadString('assets/data/subset_updated_final.csv');
     final List<List<dynamic>> rowsAsListOfValues =
         const CsvToListConverter().convert(csvData);
 
@@ -134,11 +139,16 @@ class DatabaseHelper {
       final row = rowsAsListOfValues[i];
 
       final Puzzle puzzle = Puzzle(
-        puzzleId: row[0], fen: row[1], moves: row[2], rating: row[3],
-        theme: row[7], toMove: '',
+          puzzleId: row[0],
+          fen: row[1],
+          moves: row[2],
+          rating: row[3],
+          theme: row[6],
+          toMove: row[9],
+          pgn: row[8]
 
-        // ... other fields ...
-      );
+          // ... other fields ...
+          );
 
       puzzles.add(puzzle);
     }
@@ -212,13 +222,16 @@ class DatabaseHelper {
     if (maps.isNotEmpty) {
       // ... create and return Puzzle object ...
       final puzzle = Puzzle(
-        puzzleId: maps[0]['puzzleId'],
-        fen: maps[0]['fen'],
-        moves: maps[0]['moves'],
-        rating: maps[0]['rating'], theme: maps[0]['theme'],
+          puzzleId: maps[0]['puzzleId'],
+          fen: maps[0]['fen'],
+          moves: maps[0]['moves'],
+          rating: maps[0]['rating'],
+          theme: maps[0]['theme'],
+          toMove: maps[0]['toMove'],
+          pgn: maps[0]['pgn']
 
-        // ... other fields ...
-      );
+          // ... other fields ...
+          );
 
       return puzzle;
     }
@@ -273,14 +286,16 @@ class DatabaseHelper {
     );
     if (maps.isNotEmpty) {
       final puzzle = Puzzle(
-        puzzleId: maps[0]['puzzleId'],
-        fen: maps[0]['fen'],
-        moves: maps[0]['moves'],
-        rating: maps[0]['rating'],
-        theme: maps[0]['theme'],
+          puzzleId: maps[0]['puzzleId'],
+          fen: maps[0]['fen'],
+          moves: maps[0]['moves'],
+          rating: maps[0]['rating'],
+          theme: maps[0]['theme'],
+          toMove: maps[0]['toMove'],
+          pgn: maps[0]['pgn']
 
-        // ... other fields ...
-      );
+          // ... other fields ...
+          );
       prefs.setString('currentPuzzleId', puzzle.puzzleId);
 
       return puzzle;
