@@ -541,6 +541,7 @@ class _SandboxState extends State<Sandbox> {
   Future<void> checkAnswer(Puzzle sand) async {
     DatabaseHelper db = DatabaseHelper();
     int userRating = -1;
+    final prefs = await SharedPreferences.getInstance();
 
     // fetch the user rating
     var userStats = await db.getUserStats();
@@ -565,6 +566,7 @@ class _SandboxState extends State<Sandbox> {
     _answer.value = !hasBeenWrong;
 
     if (hasBeenWrong && countCheckAfterWrongAnswer < 1) {
+      prefs.setBool('hasBeenWrong', true);
       countCheckAfterWrongAnswer++;
       db.updateUserRating(userRating - 8);
       _rating.value = -8;
@@ -577,8 +579,9 @@ class _SandboxState extends State<Sandbox> {
       isCorrect.fillRange(0, 20, false);
       isFinished = true;
       _isFinishedNotifier.value = isFinished;
+      prefs.remove('currentPuzzleId');
 
-      if (_answer.value) {
+      if (_answer.value && prefs.getBool('hasBeenWrong') == null) {
         db.updateUserRating(userRating + 13);
         _rating.value = 13;
         stopwatch.stop();
@@ -586,7 +589,8 @@ class _SandboxState extends State<Sandbox> {
     }
   }
 
-  void nextPuzzle(String puzzleId) {
+  void nextPuzzle(String puzzleId) async {
+    final prefs = await SharedPreferences.getInstance();
     if (isFinished || countGiveUp == 1) {
       markPuzzleAsSolved(puzzleId).then((_) {
         _future = getPuzzleWithStats();
@@ -600,6 +604,7 @@ class _SandboxState extends State<Sandbox> {
       ratingChanged = false;
       stopwatch.reset();
       stopwatch.start();
+      prefs.remove('hasBeenWrong');
     }
   }
 }

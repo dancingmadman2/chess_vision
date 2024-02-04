@@ -101,7 +101,6 @@ class DatabaseHelper {
   rating INTEGER,
   theme TEXT,
   solved INTEGER DEFAULT 0,
-  toMove TEXT,
   pgn TEXT
     )
   ''');
