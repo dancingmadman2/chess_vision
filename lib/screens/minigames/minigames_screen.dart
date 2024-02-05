@@ -1,4 +1,5 @@
 import 'package:chess_vision/screens/puzzles/combined_puzzles.dart';
+import 'package:chess_vision/screens/puzzles/sandbox.dart';
 import 'package:chess_vision/screens/puzzles/components/puzzles_button.dart';
 import 'package:chess_vision/styles.dart';
 import 'package:flutter/material.dart';

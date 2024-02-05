@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:chess_vision/components/helper.dart';
+import 'package:chess_vision/components/database.dart';
 import 'package:chess_vision/screens/puzzles/components/sandbox_methods.dart';
 import 'package:chess_vision/styles.dart';
 import 'package:flutter/cupertino.dart';
@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
 
 class Sandbox extends StatefulWidget {
   const Sandbox({super.key});
@@ -41,10 +42,17 @@ class _SandboxState extends State<Sandbox> {
   Stopwatch stopwatch = Stopwatch();
 
   Future<void> markPuzzleAsSolved(String puzzleId) async {
-    DatabaseHelper db = DatabaseHelper();
     final prefs = await SharedPreferences.getInstance();
+    final dbPath = await getDatabasePath();
+    final db = await openDatabase(dbPath);
 
-    db.updateSolved(puzzleId);
+    // mark it as solved in the sql table
+    await db.update(
+      'Puzzles',
+      {'solved': 1}, // Set solved to 1
+      where: 'puzzleId = ?',
+      whereArgs: [puzzleId],
+    );
 
     // removing the sharedpref tag so that new puzzles can be generated
     _answer.value = false;
@@ -54,76 +62,150 @@ class _SandboxState extends State<Sandbox> {
   }
 
   Future<PuzzleWithUserStats> getPuzzleWithStats() async {
-    DatabaseHelper db = DatabaseHelper();
     final prefs = await SharedPreferences.getInstance();
     String? currentPuzzleId = prefs.getString('currentPuzzleId');
     User? user;
     Puzzle? puzzle;
 
     if (currentPuzzleId == null) {
-      puzzle = await db.getPuzzleByRating(); // Fetch a new random puzzle
+      puzzle = await getPuzzleByRating(); // Fetch a new random puzzle
     } else {
-      puzzle = await db
-          .getPuzzle(currentPuzzleId); // Fetch the puzzle with the stored ID
+      puzzle = await getPuzzleById(
+          currentPuzzleId); // Fetch the puzzle with the stored ID
     }
 
-    user = await db.getUserStats(); // Get user stats
-
-    // Loop to parse the moves
-    List<String> solution = parseSolution(puzzle!.moves, puzzle.fen);
-    print(solution);
+    user = await getUserStats(); // Get user stats
 
     return PuzzleWithUserStats(puzzle: puzzle, userStats: user);
   }
 
+  Future<Puzzle?> getPuzzleById(String puzzleId) async {
+    final dbPath = await getDatabasePath();
+    final db = await openDatabase(dbPath);
+    final List<Map<String, dynamic>> maps = await db.query(
+      'puzzles',
+      where: 'puzzleId = ?',
+      whereArgs: [puzzleId],
+    );
+    List<String> parser = [];
+    String toMove = '';
+
+    final f = Puzzle(
+      puzzleId: maps[0]['puzzleId'],
+      fen: maps[0]['fen'],
+      moves: maps[0]['moves'],
+      rating: maps[0]['rating'], theme: maps[0]['theme'],
+
+      // ... other fields ...
+    );
+
+    parser = f.fen.split(' ');
+    toMove = parser[1];
+    if (toMove == 'b') {
+      toMove = 'White to move';
+    } else {
+      toMove = 'Black to move';
+    }
+
+    if (maps.isNotEmpty) {
+      // ... create and return Puzzle object ...
+      final puzzle = Puzzle(
+        puzzleId: maps[0]['puzzleId'],
+        fen: maps[0]['fen'],
+        moves: maps[0]['moves'],
+        rating: maps[0]['rating'],
+        theme: maps[0]['theme'],
+        toMove: toMove,
+
+        // ... other fields ...
+      );
+
+      return puzzle;
+    }
+    return null;
+  }
+
+  Future<Puzzle?> getPuzzleByRating() async {
+    int userRating = -1;
+    var userStats = await getUserStats();
+    if (userStats != null) {
+      userRating = userStats.rating;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final dbPath = await getDatabasePath();
+    final db = await openDatabase(dbPath);
+
+    String? currentPuzzleId = prefs.getString('currentPuzzleId');
+    String whereClause = 'rating >= ? AND rating <= ? AND solved = 0';
+    List<dynamic> whereArgs = [];
+
+    if (userRating > 980) {
+      whereArgs = [userRating - 50, userRating + 50];
+    } else {
+      whereArgs = [1000, 1050];
+    }
+
+    // Exclude the current puzzle ID if it exists
+    if (currentPuzzleId != null) {
+      whereClause += ' AND puzzleId != ?';
+      whereArgs.add(currentPuzzleId);
+    }
+
+    final List<Map<String, dynamic>> maps = await db.query(
+      'puzzles',
+      where: whereClause,
+      whereArgs: whereArgs,
+      orderBy: 'RANDOM()',
+      limit: 1,
+    );
+
+    List<String> parser = [];
+    String toMove = '';
+
+    final f = Puzzle(
+      puzzleId: maps[0]['puzzleId'],
+      fen: maps[0]['fen'],
+      moves: maps[0]['moves'],
+      rating: maps[0]['rating'],
+      theme: maps[0]['theme'],
+    );
+    parser = f.fen.split(' ');
+    toMove = parser[1];
+    if (toMove == 'b') {
+      toMove = 'White to move';
+    } else {
+      toMove = 'Black to move';
+    }
+
+    if (maps.isNotEmpty) {
+      final puzzle = Puzzle(
+          puzzleId: maps[0]['puzzleId'],
+          fen: maps[0]['fen'],
+          moves: maps[0]['moves'],
+          rating: maps[0]['rating'],
+          theme: maps[0]['theme'],
+          toMove: toMove
+          // ... other fields ...
+          );
+      prefs.setString('currentPuzzleId', puzzle.puzzleId);
+
+      return puzzle;
+    }
+    return null;
+  }
+
   Future<bool> authenticateSolution(String puzzleId, int index) async {
-    DatabaseHelper db = DatabaseHelper();
     bool isAuthenticated = false;
-    var puzzle = await db.getPuzzle(puzzleId);
+    var puzzle = await getPuzzle(puzzleId);
     String moves = '';
     String fen = '';
     if (puzzle != null) {
       moves = puzzle.moves;
       fen = puzzle.fen;
     }
-
-    // Loop to parse the moves
-    List<String> solution = parseSolution(moves, fen);
-    print(solution);
-
-    // Right answer
-    if (_controller.text.toString().toLowerCase() ==
-        solution[index].toLowerCase()) {
-      isAuthenticated = true;
-
-      _answerTF.value = List<bool>.from(_answerTF.value)..[0] = true;
-
-      if (!_timer.isActive) {
-        _timer = Timer.periodic(const Duration(milliseconds: 1000), (timer) {
-          _answerTF.value = List<bool>.from(_answerTF.value)..[0] = false;
-          _timer.cancel();
-        });
-      }
-    }
-    // Wrong answer
-    else {
-      _answerTF.value = List<bool>.from(_answerTF.value)..[1] = true;
-      _answer.value = false;
-
-      if (!_timer.isActive) {
-        _timer = Timer.periodic(const Duration(milliseconds: 1000), (timer) {
-          _answerTF.value = List<bool>.from(_answerTF.value)..[1] = false;
-          _timer.cancel();
-        });
-      }
-    }
-    return isAuthenticated;
-  }
-
-  List<String> parseSolution(
-    String moves,
-    String xFen,
-  ) {
+    List<String> movesArray = [];
+    List<String> parsedMoves = [];
+    movesArray = moves.split(' ');
     /*
     parsing logic for solution
      moves:  h4h5 d4f2 g3b3 c2b3 a2b3 f2e1
@@ -133,10 +215,8 @@ class _SandboxState extends State<Sandbox> {
      update current board(fen) after each move
      iterate
     */
-    List<String> movesArray = [];
-
-    movesArray = moves.split(' ');
-    List<String> parsedMoves = [];
+    String xFen = fen;
+    // Loop to parse the moves
     for (int i = 0; i < movesArray.length; i++) {
       String parsedMove = '';
       //if piece is a pawn
@@ -172,7 +252,35 @@ class _SandboxState extends State<Sandbox> {
         solution.add(parsedMoves[i]);
       }
     }
-    return solution;
+    print(solution);
+
+    // Right answer
+    if (_controller.text.toString().toLowerCase() ==
+        solution[index].toLowerCase()) {
+      isAuthenticated = true;
+
+      _answerTF.value = List<bool>.from(_answerTF.value)..[0] = true;
+
+      if (!_timer.isActive) {
+        _timer = Timer.periodic(const Duration(milliseconds: 1000), (timer) {
+          _answerTF.value = List<bool>.from(_answerTF.value)..[0] = false;
+          _timer.cancel();
+        });
+      }
+    }
+    // Wrong answer
+    else {
+      _answerTF.value = List<bool>.from(_answerTF.value)..[1] = true;
+      _answer.value = false;
+
+      if (!_timer.isActive) {
+        _timer = Timer.periodic(const Duration(milliseconds: 1000), (timer) {
+          _answerTF.value = List<bool>.from(_answerTF.value)..[1] = false;
+          _timer.cancel();
+        });
+      }
+    }
+    return isAuthenticated;
   }
 
   @override
@@ -334,7 +442,7 @@ class _SandboxState extends State<Sandbox> {
                           valueListenable: _timeNotifier,
                           builder: (context, value, child) {
                             return Text(
-                              value,
+                              '$value',
                               style: defText,
                             );
                           }),
@@ -343,6 +451,33 @@ class _SandboxState extends State<Sandbox> {
                   Text(
                     'Puzzle: ${sand.puzzleId}',
                     style: defText,
+                  ),
+                  const SizedBox(
+                    height: 15,
+                  ),
+                  Row(
+                    children: [
+                      const SizedBox(
+                        width: 5,
+                      ),
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                            border: Border.all(width: 2, color: Colors.white),
+                            borderRadius: BorderRadius.circular(8),
+                            color: sand.toMove!.contains('W')
+                                ? Colors.white
+                                : Colors.black),
+                      ),
+                      const SizedBox(
+                        width: 5,
+                      ),
+                      Text(
+                        sand.toMove ?? '',
+                        style: defText,
+                      ),
+                    ],
                   ),
                   const SizedBox(
                     height: 15,
@@ -497,13 +632,11 @@ class _SandboxState extends State<Sandbox> {
   }
 
   Future<void> giveUp() async {
-    DatabaseHelper db = DatabaseHelper();
-
     if (!isFinished) {
       int userRating = -1;
 
       // fetch the user rating
-      var userStats = await db.getUserStats();
+      var userStats = await getUserStats();
       if (userStats != null) {
         userRating = userStats.rating;
       }
@@ -522,8 +655,8 @@ class _SandboxState extends State<Sandbox> {
         countGiveUp++;
         final prefs = await SharedPreferences.getInstance();
         // removing the sharedpref tag so that new puzzles can be generated
-        if (!ratingChanged && prefs.getBool('doneBefore') == null) {
-          db.updateUserRating(userRating - 8);
+        if (!ratingChanged) {
+          updateUserRating(userRating - 8);
           _rating.value = -8;
         }
 
@@ -533,19 +666,16 @@ class _SandboxState extends State<Sandbox> {
         stopwatch.stop();
         setState(() {
           prefs.remove('currentPuzzleId');
-          prefs.remove('doneBefore');
         });
       }
     }
   }
 
   Future<void> checkAnswer(Puzzle sand) async {
-    DatabaseHelper db = DatabaseHelper();
     int userRating = -1;
-    final prefs = await SharedPreferences.getInstance();
 
     // fetch the user rating
-    var userStats = await db.getUserStats();
+    var userStats = await getUserStats();
     if (userStats != null) {
       userRating = userStats.rating;
     }
@@ -566,12 +696,9 @@ class _SandboxState extends State<Sandbox> {
     }
     _answer.value = !hasBeenWrong;
 
-    if (hasBeenWrong &&
-        countCheckAfterWrongAnswer < 1 &&
-        prefs.getBool('doneBefore') == null) {
-      prefs.setBool('doneBefore', true);
+    if (hasBeenWrong && countCheckAfterWrongAnswer < 1) {
       countCheckAfterWrongAnswer++;
-      db.updateUserRating(userRating - 8);
+      updateUserRating(userRating - 8);
       _rating.value = -8;
       ratingChanged = true;
     }
@@ -582,18 +709,16 @@ class _SandboxState extends State<Sandbox> {
       isCorrect.fillRange(0, 20, false);
       isFinished = true;
       _isFinishedNotifier.value = isFinished;
-      prefs.remove('currentPuzzleId');
 
-      if (_answer.value && prefs.getBool('doneBefore') == null) {
-        db.updateUserRating(userRating + 13);
+      if (_answer.value) {
+        updateUserRating(userRating + 13);
         _rating.value = 13;
         stopwatch.stop();
       }
     }
   }
 
-  void nextPuzzle(String puzzleId) async {
-    final prefs = await SharedPreferences.getInstance();
+  void nextPuzzle(String puzzleId) {
     if (isFinished || countGiveUp == 1) {
       markPuzzleAsSolved(puzzleId).then((_) {
         _future = getPuzzleWithStats();
@@ -607,7 +732,6 @@ class _SandboxState extends State<Sandbox> {
       ratingChanged = false;
       stopwatch.reset();
       stopwatch.start();
-      prefs.remove('doneBefore');
     }
   }
 }

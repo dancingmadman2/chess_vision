@@ -1,6 +1,5 @@
-import 'package:chess_vision/screens/puzzles/combined_puzzles.dart';
 import 'package:chess_vision/screens/puzzles/components/puzzles_button.dart';
-import 'package:chess_vision/screens/puzzles/sandbox.dart';
+import 'package:chess_vision/screens/puzzles/combined_puzzles.dart';
 import 'package:chess_vision/styles.dart';
 
 import 'package:flutter/material.dart';
@@ -39,7 +38,7 @@ class _PuzzlesScreenState extends State<PuzzlesScreen> {
             title: 'Combined Puzzles',
             description:
                 'These are a combination of all the puzzles to test yourself and get a rating.',
-            destination: const Sandbox(),
+            destination: const CombinedPuzzles(),
           ),
           const SizedBox(
             height: 30,

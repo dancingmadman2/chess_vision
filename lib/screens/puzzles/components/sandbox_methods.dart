@@ -1,4 +1,4 @@
-import '../../../components/helper.dart';
+import '../../../components/database.dart';
 
 class PuzzleWithUserStats {
   final Puzzle? puzzle;

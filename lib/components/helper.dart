@@ -1,3 +1,4 @@
+import 'package:chess_vision/components/database.dart';
 import 'package:chess_vision/styles.dart';
 import 'package:csv/csv.dart';
 
@@ -72,7 +73,7 @@ class User {
 class DatabaseHelper {
   static Database? _database;
   final _dbName = 'keshpopo.db';
-  final _version = 1;
+  final _version = 3;
 
   //Future<Database> get database async => _database ??= await _initDatabase();
 
@@ -86,7 +87,10 @@ class DatabaseHelper {
         await createDatabase(db);
 
         loadCsvData().then((_) => Get.back());
-      });
+      }, onUpgrade: ((db, oldVersion, newVersion) {
+        dbUpgradeSnackbar();
+        loadCsvData().then((_) => Get.back);
+      }));
     }
   }
 
@@ -118,13 +122,7 @@ class DatabaseHelper {
     db.rawInsert('''
         INSERT INTO UserStats(id, rating, puzzlesPlayed, puzzlesWon, puzzlesLost)
         VALUES(?, ?, ?, ?, ?)
-      ''', [
-      1,
-      1000,
-      0,
-      0,
-      0
-    ]); // Replace these initial values with your desired values
+      ''', [1, 1000, 0, 0, 0]); // setting initial values
   }
 
   Future<void> loadCsvData() async {
