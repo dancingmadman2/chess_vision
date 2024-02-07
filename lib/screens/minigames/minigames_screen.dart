@@ -42,7 +42,7 @@ class _MinigamesScreenState extends State<MinigamesScreen> {
               description:
                   'Get familiar with the squares on chessboard by training.'),
           const SizedBox(
-            height: 30,
+            height: 15,
           ),
           PuzzlesButton(
               destination: const CombinedPuzzles(),
