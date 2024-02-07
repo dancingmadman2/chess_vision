@@ -24,9 +24,9 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
   int index = 0;
   List<bool> isCorrect = List.filled(20, false);
   int tryGiveUp = 0;
-  int countCheckAnswer = 0;
+
   int countCheckAfterWrongAnswer = 0;
-  int countGiveUp = 0;
+
   late Timer _timer;
   bool isFinished = false;
   bool hasBeenWrong = false;
@@ -38,7 +38,8 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
   late ValueNotifier<bool> _isFinishedNotifier;
   late final ValueNotifier<String> _timeNotifier =
       ValueNotifier<String>("0:00");
-  bool showSolution = false;
+  bool showBoard = false;
+  late ValueNotifier<bool> _showBoardNotifier;
   late ValueNotifier<bool> _showSolutionNotifier;
   late ValueNotifier<String> _pgnNotifier;
 
@@ -189,6 +190,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     _giveUp = ValueNotifier(0);
     _rating = ValueNotifier(0);
     _isFinishedNotifier = ValueNotifier(false);
+    _showBoardNotifier = ValueNotifier(false);
     _showSolutionNotifier = ValueNotifier(false);
     _pgnNotifier = ValueNotifier('');
     stopwatch.start();
@@ -371,14 +373,14 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                                     style: defText,
                                   ),
                                   ValueListenableBuilder<bool?>(
-                                      valueListenable: _showSolutionNotifier,
+                                      valueListenable: _showBoardNotifier,
                                       builder: (context, value, child) {
                                         return CupertinoSwitch(
                                           trackColor: Colors.grey,
                                           activeColor: green,
-                                          value: _showSolutionNotifier.value,
+                                          value: _showBoardNotifier.value,
                                           onChanged: (value) {
-                                            _showSolutionNotifier.value = value;
+                                            _showBoardNotifier.value = value;
                                           },
                                         );
                                       }),
@@ -391,7 +393,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                           height: 30,
                         ),
                         ValueListenableBuilder<bool>(
-                            valueListenable: _showSolutionNotifier,
+                            valueListenable: _showBoardNotifier,
                             builder: (context, value, child) {
                               List<String> moves = sand.moves.split(' ');
                               return value
@@ -579,7 +581,6 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                                         const SizedBox(
                                           width: 15,
                                         ),
-
                                         SizedBox(
                                             width: screenWidth / 2 - 50,
                                             height: 70,
@@ -610,13 +611,21 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                                                         );
                                                       }),
                                             )),
-
-                                        //
                                         const SizedBox(
                                           width: 15,
                                         ),
                                       ],
                                     )
+                                  : const Center();
+                            }),
+                        ValueListenableBuilder<bool>(
+                            valueListenable: _showSolutionNotifier,
+                            builder: (context, value, child) {
+                              List<String> moves = sand.moves.split(' ');
+                              return value
+                                  ? ChessboardWidget(
+                                      fen: applyMoveToFen(sand.fen, moves[0]),
+                                      pieces: true)
                                   : const Center();
                             }),
                         const SizedBox(
@@ -681,8 +690,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
         });
       }
 
-      if (tryGiveUp == 2 && countGiveUp < 1) {
-        countGiveUp++;
+      if (tryGiveUp == 2) {
         final prefs = await SharedPreferences.getInstance();
         // removing the sharedpref tag so that new puzzles can be generated
         if (!ratingChanged && prefs.getBool('doneBefore') == null) {
@@ -695,7 +703,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
 
         isFinished = true;
         _isFinishedNotifier.value = isFinished;
-
+        _showSolutionNotifier.value = true;
         stopwatch.stop();
         setState(() {
           prefs.remove('currentPuzzleId');
@@ -748,8 +756,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       ratingChanged = true;
     }
 
-    if (isCorrect[l - 1] && countCheckAnswer < 1) {
-      countCheckAnswer++;
+    if (isCorrect[l - 1]) {
       index = 0;
       isCorrect.fillRange(0, 20, false);
       isFinished = true;
@@ -766,17 +773,17 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
 
   void nextPuzzle(String puzzleId) async {
     final prefs = await SharedPreferences.getInstance();
-    if (isFinished || countGiveUp == 1) {
+    if (isFinished) {
       markPuzzleAsSolved(puzzleId).then((_) {
         _future = getPuzzleWithStats();
       });
-      countCheckAnswer = 0;
-      countGiveUp = 0;
+
       _rating.value = 0;
 
       countCheckAfterWrongAnswer = 0;
       isFinished = false;
       _isFinishedNotifier.value = isFinished;
+      _showSolutionNotifier.value = false;
       _pgnNotifier.value = '';
       ratingChanged = false;
       stopwatch.reset();
