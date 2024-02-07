@@ -24,6 +24,9 @@ TextStyle defTextLight = GoogleFonts.lato(
   fontSize: 14,
   color: Colors.white,
 );
+TextStyle textBlue = GoogleFonts.lato(
+    fontSize: 20, color: Colors.blue, fontWeight: FontWeight.bold);
+
 TextStyle defTextGrey = GoogleFonts.lato(
   fontSize: 14,
   color: Colors.white54,

@@ -73,7 +73,7 @@ class User {
 class DatabaseHelper {
   static Database? _database;
   final _dbName = 'keshpopo.db';
-  final _version = 3;
+  final _version = 5;
 
   //Future<Database> get database async => _database ??= await _initDatabase();
 
@@ -89,7 +89,11 @@ class DatabaseHelper {
         loadCsvData().then((_) => Get.back());
       }, onUpgrade: ((db, oldVersion, newVersion) {
         dbUpgradeSnackbar();
-        loadCsvData().then((_) => Get.back);
+        loadCsvData().then((_) {
+          if (Get.isSnackbarOpen) {
+            Get.closeCurrentSnackbar();
+          }
+        });
       }));
     }
   }
@@ -235,10 +239,17 @@ class DatabaseHelper {
     return null;
   }
 
-  Future<void> updateUserStats(int puzzlesPlayed, int puzzlesWon) async {
+  Future<void> updateUserStats(
+      int puzzlesPlayed, int puzzlesWon, int puzzlesLost) async {
     await _database?.update(
-        'UserStats', {'puzzlesPlayed': puzzlesPlayed, 'puzzlesWon': puzzlesWon},
-        where: 'id = ?', whereArgs: [1]);
+        'UserStats',
+        {
+          'puzzlesPlayed': puzzlesPlayed,
+          'puzzlesWon': puzzlesWon,
+          'puzzlesLost': puzzlesLost
+        },
+        where: 'id = ?',
+        whereArgs: [1]);
   }
 
   Future<void> updateSolved(String puzzleId) async {
