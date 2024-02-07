@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:chess_vision/styles.dart';
 import 'package:flutter/material.dart';
 
@@ -34,10 +36,24 @@ class ChessboardWidget extends StatelessWidget {
                       height: 40,
                       color: (file.codeUnitAt(0) + rank) % 2 == 0
                           ? mono
-                          : Colors.white,
+                          : Colors.white60,
                       child: Center(
                           child: pieces
-                              ? Text(getPiece(fen, file + rank.toString()))
+                              ? getPiece(fen, file + rank.toString()).isNotEmpty
+                                  ? Image.asset(
+                                      pieceImage(getPiece(
+                                          fen, file + rank.toString())),
+                                      width: 32,
+                                      height: 32,
+                                      color: getPiece(fen,
+                                                  file + rank.toString()) ==
+                                              getPiece(fen,
+                                                      file + rank.toString())
+                                                  .toUpperCase()
+                                          ? Colors.white
+                                          : Colors.black,
+                                    )
+                                  : null
                               : null),
                     ),
                     const SizedBox(width: 8),
@@ -52,22 +68,6 @@ class ChessboardWidget extends StatelessWidget {
               const SizedBox(width: 8),
             ],
           ),
-        // Display files
-        /*
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(width: 8),
-            for (String file in files) ...[
-              const SizedBox(width: 16),
-              Text(
-                file,
-                style: defText,
-              ),
-              const SizedBox(width: 16),
-            ],
-          ],
-        ),*/
       ],
     );
   }
@@ -106,5 +106,15 @@ class ChessboardWidget extends StatelessWidget {
     String piece = board[rank * 8 + file];
 
     return piece;
+  }
+
+  String pieceImage(String piece) {
+    String x = piece;
+    x = x.toUpperCase();
+    if (piece.isNotEmpty) {
+      return 'assets/images/$x.png';
+    } else {
+      return '';
+    }
   }
 }

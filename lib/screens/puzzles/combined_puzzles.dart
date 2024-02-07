@@ -277,7 +277,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                       child: Icon(
                         Icons.history_rounded,
                         color: Colors.white,
-                        size: 32,
+                        size: 36,
                       ),
                     ),
                   ),
@@ -369,21 +369,24 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                                     width: 30,
                                   ),
                                   Text(
-                                    'Chessboard  ',
+                                    'Chessboard',
                                     style: defText,
                                   ),
-                                  ValueListenableBuilder<bool?>(
-                                      valueListenable: _showBoardNotifier,
-                                      builder: (context, value, child) {
-                                        return CupertinoSwitch(
-                                          trackColor: Colors.grey,
-                                          activeColor: green,
-                                          value: _showBoardNotifier.value,
-                                          onChanged: (value) {
-                                            _showBoardNotifier.value = value;
-                                          },
-                                        );
-                                      }),
+                                  Transform.scale(
+                                    scale: 0.75,
+                                    child: ValueListenableBuilder<bool?>(
+                                        valueListenable: _showBoardNotifier,
+                                        builder: (context, value, child) {
+                                          return CupertinoSwitch(
+                                            trackColor: Colors.grey,
+                                            activeColor: green,
+                                            value: _showBoardNotifier.value,
+                                            onChanged: (value) {
+                                              _showBoardNotifier.value = value;
+                                            },
+                                          );
+                                        }),
+                                  ),
                                 ],
                               ),
                             ),
@@ -779,7 +782,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
 
       if (_answer.value && prefs.getBool('doneBefore') == null) {
         db.updateUserRating(userRating + 13);
-        print(puzzlesWon);
+
         db.updateUserStats(puzzlesPlayed + 1, puzzlesWon + 1, puzzlesLost);
         _rating.value = 13;
         stopwatch.stop();
