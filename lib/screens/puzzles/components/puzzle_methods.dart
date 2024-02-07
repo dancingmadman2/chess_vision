@@ -8,7 +8,9 @@ class PuzzleWithUserStats {
 }
 
 List<String> parsePgn(String pgn) {
+  //print(pgn);
   List<String> moves = pgn.split(' ');
+
   int count = 0;
   for (int i = 0; i < moves.length; i++) {
     if (i == 0) {
@@ -16,6 +18,7 @@ List<String> parsePgn(String pgn) {
       moves.insert(0, '1. ');
     } else if (i % 3 == 0) {
       count++;
+
       moves.insert(i, '$count. ');
     }
   }

@@ -40,6 +40,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       ValueNotifier<String>("0:00");
   bool showSolution = false;
   late ValueNotifier<bool> _showSolutionNotifier;
+  late ValueNotifier<String> _pgnNotifier;
 
   Stopwatch stopwatch = Stopwatch();
 
@@ -75,6 +76,8 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     // Loop to parse the moves
     List<String> solution = parseSolution(puzzle!.moves, puzzle.fen);
     print(solution);
+
+    _pgnNotifier.value = puzzle.pgn;
 
     return PuzzleWithUserStats(puzzle: puzzle, userStats: user);
   }
@@ -187,6 +190,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     _rating = ValueNotifier(0);
     _isFinishedNotifier = ValueNotifier(false);
     _showSolutionNotifier = ValueNotifier(false);
+    _pgnNotifier = ValueNotifier('');
     stopwatch.start();
     Timer.periodic(const Duration(seconds: 1), (timer) {
       //final prefs = await SharedPreferences.getInstance();
@@ -199,8 +203,8 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       _timeNotifier.value = "$minutes:${seconds.toString().padLeft(2, '0')}";
     });
 
+    // Initializing the _timer
     _timer = Timer.periodic(const Duration(seconds: 0), (timer) {
-      // Perform your periodic logic here
       _timer.cancel();
     });
 
@@ -370,7 +374,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                                       valueListenable: _showSolutionNotifier,
                                       builder: (context, value, child) {
                                         return CupertinoSwitch(
-                                          trackColor: Colors.red,
+                                          trackColor: Colors.grey,
                                           activeColor: green,
                                           value: _showSolutionNotifier.value,
                                           onChanged: (value) {
@@ -461,7 +465,11 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                         ),
                         Padding(
                           padding: const EdgeInsets.all(5.0),
-                          child: buildChessText(sand.pgn),
+                          child: ValueListenableBuilder<String>(
+                              valueListenable: _pgnNotifier,
+                              builder: (context, value, child) {
+                                return buildChessText(value);
+                              }),
                         ),
                         const SizedBox(
                           height: 15,
@@ -478,8 +486,8 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                                   onSubmitted: (value) => checkAnswer(sand),
                                   cursorColor: Colors.white,
                                   decoration: InputDecoration(
-                                      labelText: 'Enter your solution',
-                                      labelStyle: defTextGrey,
+                                      hintText: 'Enter move eg(Bxc3)',
+                                      hintStyle: defTextLight,
                                       counterText: '',
                                       disabledBorder: OutlineInputBorder(
                                           borderRadius:
@@ -701,12 +709,13 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     DatabaseHelper db = DatabaseHelper();
     int userRating = -1;
     final prefs = await SharedPreferences.getInstance();
-
+    List<String> solution = parseSolution(sand.moves, sand.fen);
     // fetch the user rating
     var userStats = await db.getUserStats();
     if (userStats != null) {
       userRating = userStats.rating;
     }
+
     List<String> movesArray = [];
 
     movesArray = sand.moves.split(' ');
@@ -717,8 +726,11 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     }
 
     if (isCorrect[index]) {
-      index++;
       _controller.clear();
+      // show new moves
+      _pgnNotifier.value = '${_pgnNotifier.value} ${solution[index]}';
+
+      index++;
     } else {
       hasBeenWrong = true;
     }
@@ -761,9 +773,11 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       countCheckAnswer = 0;
       countGiveUp = 0;
       _rating.value = 0;
+
       countCheckAfterWrongAnswer = 0;
       isFinished = false;
       _isFinishedNotifier.value = isFinished;
+      _pgnNotifier.value = '';
       ratingChanged = false;
       stopwatch.reset();
       stopwatch.start();

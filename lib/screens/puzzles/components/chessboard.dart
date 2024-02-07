@@ -27,21 +27,33 @@ class ChessboardWidget extends StatelessWidget {
               const SizedBox(width: 8),
               // Display files
               for (String file in files)
-                Container(
-                  width: 40,
-                  height: 40,
-                  color: (file.codeUnitAt(0) + rank) % 2 == 0
-                      ? Colors.grey
-                      : Colors.white,
-                  child: Center(
-                      child: pieces
-                          ? Text(getPiece(fen, file + rank.toString()))
-                          : null),
+                Column(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      color: (file.codeUnitAt(0) + rank) % 2 == 0
+                          ? mono
+                          : Colors.white,
+                      child: Center(
+                          child: pieces
+                              ? Text(getPiece(fen, file + rank.toString()))
+                              : null),
+                    ),
+                    const SizedBox(width: 8),
+                    if (rank == 1)
+                      Text(
+                        file,
+                        style: defText,
+                      ),
+                    const SizedBox(width: 8),
+                  ],
                 ),
               const SizedBox(width: 8),
             ],
           ),
         // Display files
+        /*
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -55,7 +67,7 @@ class ChessboardWidget extends StatelessWidget {
               const SizedBox(width: 16),
             ],
           ],
-        ),
+        ),*/
       ],
     );
   }
