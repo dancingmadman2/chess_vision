@@ -120,7 +120,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: defText,
                         ),
                         Text(
-                          '63%',
+                          userStats!.puzzlesPlayed != 0
+                              ? '${(userStats.puzzlesWon / userStats.puzzlesPlayed * 100).toStringAsFixed(2)} %'
+                              : '0 %',
                           style: subtitleGreen,
                         ),
                       ],

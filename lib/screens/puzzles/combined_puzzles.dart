@@ -673,11 +673,17 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
 
     if (!isFinished) {
       int userRating = -1;
+      int puzzlesPlayed = -1;
+      int puzzlesWon = -1;
+      int puzzlesLost = -1;
 
       // fetch the user rating
       var userStats = await db.getUserStats();
       if (userStats != null) {
         userRating = userStats.rating;
+        puzzlesPlayed = userStats.puzzlesPlayed;
+        puzzlesWon = userStats.puzzlesWon;
+        puzzlesLost = userStats.puzzlesLost;
       }
       tryGiveUp++;
       _giveUp.value = tryGiveUp;
@@ -694,6 +700,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
         final prefs = await SharedPreferences.getInstance();
         // removing the sharedpref tag so that new puzzles can be generated
         if (!ratingChanged && prefs.getBool('doneBefore') == null) {
+          db.updateUserStats(puzzlesPlayed + 1, puzzlesWon, puzzlesLost + 1);
           if (userRating - 8 >= 900) {
             db.updateUserRating(userRating - 8);
           }
@@ -716,12 +723,18 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
   Future<void> checkAnswer(Puzzle sand) async {
     DatabaseHelper db = DatabaseHelper();
     int userRating = -1;
+    int puzzlesPlayed = -1;
+    int puzzlesWon = -1;
+    int puzzlesLost = -1;
     final prefs = await SharedPreferences.getInstance();
     List<String> solution = parseSolution(sand.moves, sand.fen);
     // fetch the user rating
     var userStats = await db.getUserStats();
     if (userStats != null) {
       userRating = userStats.rating;
+      puzzlesPlayed = userStats.puzzlesPlayed;
+      puzzlesWon = userStats.puzzlesWon;
+      puzzlesLost = userStats.puzzlesLost;
     }
 
     List<String> movesArray = [];
@@ -749,6 +762,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
         prefs.getBool('doneBefore') == null) {
       prefs.setBool('doneBefore', true);
       countCheckAfterWrongAnswer++;
+      db.updateUserStats(puzzlesPlayed + 1, puzzlesWon, puzzlesLost + 1);
       if (userRating - 8 >= 900) {
         db.updateUserRating(userRating - 8);
       }
@@ -765,6 +779,8 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
 
       if (_answer.value && prefs.getBool('doneBefore') == null) {
         db.updateUserRating(userRating + 13);
+        print(puzzlesWon);
+        db.updateUserStats(puzzlesPlayed + 1, puzzlesWon + 1, puzzlesLost);
         _rating.value = 13;
         stopwatch.stop();
       }
