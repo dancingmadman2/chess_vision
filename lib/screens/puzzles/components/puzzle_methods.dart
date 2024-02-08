@@ -8,7 +8,7 @@ class PuzzleWithUserStats {
 }
 
 List<String> parsePgn(String pgn) {
-  //print(pgn);
+  pgn = pgn.trim();
   List<String> moves = pgn.split(' ');
 
   int count = 0;

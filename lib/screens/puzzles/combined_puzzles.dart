@@ -8,6 +8,7 @@ import 'package:flutter/cupertino.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
+import 'package:get/get.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -44,6 +45,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
   late ValueNotifier<String> _pgnNotifier;
   late ValueNotifier<bool> _showPgn;
   late ValueNotifier<String> _fenNotifier;
+  late ValueNotifier<String> _textController;
 
   Stopwatch stopwatch = Stopwatch();
 
@@ -107,8 +109,8 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     print(solution);
 
     // Right answer
-    if (_controller.text.toString().toLowerCase() ==
-        solution[index].toLowerCase()) {
+    if (_controller.text.toString().trim() ==
+        solution[index].toString().trim()) {
       isAuthenticated = true;
 
       _answerTF.value = List<bool>.from(_answerTF.value)..[0] = true;
@@ -190,7 +192,9 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       if (i % 2 != 0) {
         solution.add(parsedMoves[i]);
       } else {
-        botMoves.add(parsedMoves[i]);
+        if (i != 0) {
+          botMoves.add(parsedMoves[i]);
+        }
       }
     }
     Map<String, List<String>> parsed = {'solution': solution, 'bot': botMoves};
@@ -210,6 +214,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     _showSolutionNotifier = ValueNotifier(false);
     _pgnNotifier = ValueNotifier('');
     _showPgn = ValueNotifier(false);
+    _textController = ValueNotifier('');
     stopwatch.start();
     Timer.periodic(const Duration(seconds: 1), (timer) {
       //final prefs = await SharedPreferences.getInstance();
@@ -247,10 +252,11 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       _showBoardNotifier.dispose();
       _pgnNotifier.dispose();
       stopwatch.stop();
-      _timeNotifier.dispose();
+
       _answer.dispose();
       _showPgn.dispose();
       _fenNotifier.dispose();
+      _textController.dispose();
       super.dispose();
     }
   }
@@ -515,7 +521,12 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                           builder: (context, value, child) {
                             return value
                                 ? const Center()
-                                : endgame(sand.fen, sand, screenWidth);
+                                : ValueListenableBuilder<String>(
+                                    valueListenable: _textController,
+                                    builder: (context, value, child) {
+                                      return endgame(
+                                          sand.fen, sand, screenWidth, value);
+                                    });
                           }),
                       ValueListenableBuilder<bool>(
                           valueListenable: _showPgn,
@@ -856,7 +867,15 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       _controller.clear();
       // show new moves
       _pgnNotifier.value = '${_pgnNotifier.value} ${solution[index]}';
-      _pgnNotifier.value = '${_pgnNotifier.value} ${botMoves[index]}';
+      if (index < botMoves.length) {
+        _pgnNotifier.value = '${_pgnNotifier.value} ${botMoves[index]}';
+      }
+
+      _textController.value = '${_textController.value} ${solution[index]}';
+
+      if (index < botMoves.length) {
+        _textController.value = '${_textController.value} ${botMoves[index]}';
+      }
 
       index++;
     } else {
@@ -864,11 +883,9 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     }
     _answer.value = !hasBeenWrong;
 
-    if (hasBeenWrong &&
-        countCheckAfterWrongAnswer < 1 &&
-        prefs.getBool('doneBefore') == null) {
+    if (hasBeenWrong && prefs.getBool('doneBefore') == null) {
       prefs.setBool('doneBefore', true);
-      countCheckAfterWrongAnswer++;
+
       db.updateUserStats(puzzlesPlayed + 1, puzzlesWon, puzzlesLost + 1);
       if (userRating - 8 >= 900) {
         db.updateUserRating(userRating - 8);
@@ -889,8 +906,8 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
 
         db.updateUserStats(puzzlesPlayed + 1, puzzlesWon + 1, puzzlesLost);
         _rating.value = 13;
-        stopwatch.stop();
       }
+      stopwatch.stop();
     }
   }
 
@@ -913,13 +930,16 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       stopwatch.start();
       _showPgn.value = false;
       _fenNotifier.value = '';
+      hasBeenWrong = false;
+      _textController.value = '';
+      _answer.value = false;
       prefs.remove('doneBefore');
       _controller.clear();
     }
   }
 }
 
-Widget endgame(String fen, Puzzle puzzle, double screenWidth) {
+Widget endgame(String fen, Puzzle puzzle, double screenWidth, String text) {
   List<String> movesArray = [];
 
   movesArray = puzzle.moves.split(' ');
@@ -997,6 +1017,31 @@ Widget endgame(String fen, Puzzle puzzle, double screenWidth) {
               style: defTextLight,
             ),
           ),
+        ],
+      ),
+      const SizedBox(
+        height: 5,
+      ),
+      Row(
+        children: [
+          const SizedBox(
+            width: 5,
+          ),
+          SizedBox(
+            width: screenWidth - 15,
+            child: Text(
+              'Moves',
+              style: defText,
+            ),
+          ),
+        ],
+      ),
+      Row(
+        children: [
+          const SizedBox(
+            width: 5,
+          ),
+          SizedBox(width: screenWidth - 15, child: buildChessText(text)),
         ],
       ),
       const SizedBox(
