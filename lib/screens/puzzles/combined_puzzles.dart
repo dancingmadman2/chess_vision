@@ -43,6 +43,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
   late ValueNotifier<bool> _showSolutionNotifier;
   late ValueNotifier<String> _pgnNotifier;
   late ValueNotifier<bool> _showPgn;
+  late ValueNotifier<String> _fenNotifier;
 
   Stopwatch stopwatch = Stopwatch();
 
@@ -76,12 +77,15 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     user = await db.getUserStats(); // Get user stats
 
     // Loop to parse the moves
-    List<String> solution = parseSolution(puzzle!.moves, puzzle.fen);
-
+    //List<String> solution =  parseSolution(puzzle!.moves, puzzle.fen);
+    List<String> solution =
+        parseSolution(puzzle!.moves, puzzle.fen)['solution'];
+    print(solution);
     puzzle.solution = solution;
 
     _showPgn.value = !puzzle.theme.contains('endgame');
     _pgnNotifier.value = puzzle.pgn;
+    _fenNotifier.value = puzzle.fen;
 
     return PuzzleWithUserStats(puzzle: puzzle, userStats: user);
   }
@@ -98,7 +102,8 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     }
 
     // Loop to parse the moves
-    List<String> solution = parseSolution(moves, fen);
+    List<String> solution =
+        parseSolution(puzzle!.moves, puzzle.fen)['solution'];
     print(solution);
 
     // Right answer
@@ -130,7 +135,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     return isAuthenticated;
   }
 
-  List<String> parseSolution(
+  Map<String, dynamic> parseSolution(
     String moves,
     String xFen,
   ) {
@@ -146,7 +151,10 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     List<String> movesArray = [];
 
     movesArray = moves.split(' ');
+
+    List<String> botMoves = [];
     List<String> parsedMoves = [];
+
     for (int i = 0; i < movesArray.length; i++) {
       String parsedMove = '';
       //if piece is a pawn
@@ -174,15 +182,19 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       }
       parsedMoves.add(parsedMove);
       xFen = applyMoveToFen(xFen, movesArray[i]);
+      _fenNotifier.value = xFen;
     }
     List<String> solution = [];
 
     for (int i = 0; i < parsedMoves.length; i++) {
       if (i % 2 != 0) {
         solution.add(parsedMoves[i]);
+      } else {
+        botMoves.add(parsedMoves[i]);
       }
     }
-    return solution;
+    Map<String, List<String>> parsed = {'solution': solution, 'bot': botMoves};
+    return parsed;
   }
 
   @override
@@ -192,6 +204,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     _future = getPuzzleWithStats();
     _giveUp = ValueNotifier(0);
     _rating = ValueNotifier(0);
+    _fenNotifier = ValueNotifier('');
     _isFinishedNotifier = ValueNotifier(false);
     _showBoardNotifier = ValueNotifier(false);
     _showSolutionNotifier = ValueNotifier(false);
@@ -237,7 +250,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       _timeNotifier.dispose();
       _answer.dispose();
       _showPgn.dispose();
-
+      _fenNotifier.dispose();
       super.dispose();
     }
   }
@@ -269,6 +282,24 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
           children: [
             Stack(
               children: [
+                InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () {},
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        CupertinoIcons.exclamationmark_circle_fill,
+                        size: 36,
+                        color: green,
+                      ),
+                      Text(
+                        '  Report Puzzle  ',
+                        style: defTextLight,
+                      ),
+                    ],
+                  ),
+                ),
                 Align(
                   alignment: Alignment.topCenter,
                   child: Image.asset(
@@ -533,10 +564,6 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                       const SizedBox(
                         height: 15,
                       ),
-                      Text(
-                        sand.puzzleId,
-                        style: defText,
-                      ),
                       ValueListenableBuilder<bool>(
                           valueListenable: _isFinishedNotifier,
                           builder: (context, value, child) {
@@ -695,7 +722,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                                 : const Center();
                           }),
                       ValueListenableBuilder<bool>(
-                          valueListenable: _showSolutionNotifier,
+                          valueListenable: _isFinishedNotifier,
                           builder: (context, value, child) {
                             List<String> moves = sand.moves.split(' ');
                             return value
@@ -802,7 +829,10 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     int puzzlesWon = -1;
     int puzzlesLost = -1;
     final prefs = await SharedPreferences.getInstance();
-    List<String> solution = parseSolution(sand.moves, sand.fen);
+    Map<String, dynamic> anan = parseSolution(sand.moves, sand.fen);
+    //List<String> solution = parseSolution(sand.moves, sand.fen)['solution'];
+    List<String> solution = anan['solution'];
+    List<String> botMoves = anan['bot'];
     // fetch the user rating
     var userStats = await db.getUserStats();
     if (userStats != null) {
@@ -815,6 +845,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     List<String> movesArray = [];
 
     movesArray = sand.moves.split(' ');
+
     int l = movesArray.length ~/ 2;
 
     if (index < l && !isFinished) {
@@ -825,6 +856,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       _controller.clear();
       // show new moves
       _pgnNotifier.value = '${_pgnNotifier.value} ${solution[index]}';
+      _pgnNotifier.value = '${_pgnNotifier.value} ${botMoves[index]}';
 
       index++;
     } else {
@@ -880,6 +912,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       stopwatch.reset();
       stopwatch.start();
       _showPgn.value = false;
+      _fenNotifier.value = '';
       prefs.remove('doneBefore');
       _controller.clear();
     }
@@ -890,7 +923,6 @@ Widget endgame(String fen, Puzzle puzzle, double screenWidth) {
   List<String> movesArray = [];
 
   movesArray = puzzle.moves.split(' ');
-  print(movesArray[0]);
 
   List<String> pieces = getAllPieces(applyMoveToFen(fen, movesArray[0]));
   List<String> whitePieces = [];
@@ -921,7 +953,7 @@ Widget endgame(String fen, Puzzle puzzle, double screenWidth) {
           ),
           Text(
             'White Pieces: ',
-            style: defTextGreen,
+            style: defTextBlue,
           ),
         ],
       ),

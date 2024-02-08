@@ -442,7 +442,7 @@ class _SandboxState extends State<Sandbox> {
                           valueListenable: _timeNotifier,
                           builder: (context, value, child) {
                             return Text(
-                              '$value',
+                              value,
                               style: defText,
                             );
                           }),
