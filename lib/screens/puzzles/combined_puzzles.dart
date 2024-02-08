@@ -42,6 +42,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
   late ValueNotifier<bool> _showBoardNotifier;
   late ValueNotifier<bool> _showSolutionNotifier;
   late ValueNotifier<String> _pgnNotifier;
+  late ValueNotifier<bool> _showPgn;
 
   Stopwatch stopwatch = Stopwatch();
 
@@ -76,8 +77,10 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
 
     // Loop to parse the moves
     List<String> solution = parseSolution(puzzle!.moves, puzzle.fen);
-    print(solution);
 
+    puzzle.solution = solution;
+
+    _showPgn.value = !puzzle.theme.contains('endgame');
     _pgnNotifier.value = puzzle.pgn;
 
     return PuzzleWithUserStats(puzzle: puzzle, userStats: user);
@@ -193,6 +196,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     _showBoardNotifier = ValueNotifier(false);
     _showSolutionNotifier = ValueNotifier(false);
     _pgnNotifier = ValueNotifier('');
+    _showPgn = ValueNotifier(false);
     stopwatch.start();
     Timer.periodic(const Duration(seconds: 1), (timer) {
       //final prefs = await SharedPreferences.getInstance();
@@ -225,7 +229,14 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       _answerTF.dispose();
       _controller.dispose();
       _timer.cancel();
+      _isFinishedNotifier.dispose();
+      _showSolutionNotifier.dispose();
+      _showBoardNotifier.dispose();
+      _pgnNotifier.dispose();
       stopwatch.stop();
+      _timeNotifier.dispose();
+      _answer.dispose();
+      _showPgn.dispose();
 
       super.dispose();
     }
@@ -307,289 +318,322 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                   //print('First puzzle: ${snapshot.data?.first.toMap()}');
                   final Puzzle sand = snapshot.data!.puzzle!;
                   final User stats = snapshot.data!.userStats!;
-                  return Center(
-                    child: Column(
-                      children: [
-                        const SizedBox(
-                          height: 30,
-                        ),
-                        Row(
-                          children: [
-                            const SizedBox(
-                              width: 5,
-                            ),
-                            Text(
-                              'Your Rating: ',
-                              style: defText,
-                            ),
-                            Text(
-                              '${stats.rating}',
-                              style: subtitleGreen,
-                            ),
-                            const SizedBox(
-                              width: 5,
-                            ),
-                            ValueListenableBuilder<int?>(
-                                valueListenable: _rating,
-                                builder: (context, value, child) {
-                                  return Text(
-                                    value! != 0
-                                        ? (value > 0
-                                            ? ('+$value')
-                                            : (' $value'))
-                                        : '',
-                                    style:
-                                        value > 0 ? defTextGreen : defTextRed,
-                                  );
-                                }),
-                          ],
-                        ),
-                        Stack(
-                          children: [
-                            Row(
-                              children: [
-                                const SizedBox(
-                                  width: 5,
-                                ),
-                                Text(
-                                  'Puzzle Rating: ',
-                                  style: defText,
-                                ),
-                                Text(
-                                  '${sand.rating}',
-                                  style: subtitleBlue,
-                                ),
-                              ],
-                            ),
+                  return Column(
+                    children: [
+                      const SizedBox(
+                        height: 30,
+                      ),
+                      Stack(
+                        children: [
+                          Row(
+                            children: [
+                              const SizedBox(
+                                width: 5,
+                              ),
+                              Text(
+                                'Your Rating: ',
+                                style: defText,
+                              ),
+                              Text(
+                                '${stats.rating}',
+                                style: subtitleGreen,
+                              ),
+                              const SizedBox(
+                                width: 5,
+                              ),
+                              ValueListenableBuilder<int?>(
+                                  valueListenable: _rating,
+                                  builder: (context, value, child) {
+                                    return Text(
+                                      value! != 0
+                                          ? (value > 0
+                                              ? ('+$value')
+                                              : (' $value'))
+                                          : '',
+                                      style:
+                                          value > 0 ? defTextGreen : defTextRed,
+                                    );
+                                  }),
+                            ],
+                          ),
+                          if (sand.theme.contains('endgame'))
                             Positioned(
                               right: 0,
                               child: Row(
                                 children: [
-                                  const SizedBox(
-                                    width: 30,
-                                  ),
                                   Text(
-                                    'Chessboard',
+                                    'Show PGN',
                                     style: defText,
                                   ),
                                   Transform.scale(
                                     scale: 0.75,
                                     child: ValueListenableBuilder<bool?>(
-                                        valueListenable: _showBoardNotifier,
+                                        valueListenable: _showPgn,
                                         builder: (context, value, child) {
                                           return CupertinoSwitch(
                                             trackColor: Colors.grey,
                                             activeColor: green,
-                                            value: _showBoardNotifier.value,
+                                            value: _showPgn.value,
                                             onChanged: (value) {
-                                              _showBoardNotifier.value = value;
+                                              _showPgn.value = value;
                                             },
                                           );
                                         }),
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 30,
-                        ),
-                        ValueListenableBuilder<bool>(
-                            valueListenable: _showBoardNotifier,
-                            builder: (context, value, child) {
-                              List<String> moves = sand.moves.split(' ');
-                              return value
-                                  ? ChessboardWidget(
-                                      fen: applyMoveToFen(sand.fen, moves[0]),
-                                      pieces: false)
-                                  : const Center();
-                            }),
-                        Row(
-                          children: [
-                            const SizedBox(
-                              width: 5,
-                            ),
-                            Icon(CupertinoIcons.time, size: 32, color: green),
-                            const SizedBox(
-                              width: 5,
-                            ),
-                            ValueListenableBuilder<String>(
-                                valueListenable: _timeNotifier,
-                                builder: (context, value, child) {
-                                  return Text(
-                                    value,
-                                    style: defText,
-                                  );
-                                }),
-                            const SizedBox(
-                              width: 50,
-                            ),
-                            Text(
-                              sand.theme.contains('middle')
-                                  ? 'Middlegame Puzzle'
-                                  : sand.theme.contains('end')
-                                      ? 'Endgame Puzzle'
-                                      : 'Opening Puzzle',
-                              style: defTextGreen,
                             )
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 15,
-                        ),
-                        Row(
-                          children: [
-                            const SizedBox(
-                              width: 5,
+                        ],
+                      ),
+                      Stack(
+                        children: [
+                          Row(
+                            children: [
+                              const SizedBox(
+                                width: 5,
+                              ),
+                              Text(
+                                'Puzzle Rating: ',
+                                style: defText,
+                              ),
+                              Text(
+                                '${sand.rating}',
+                                style: subtitleBlue,
+                              ),
+                            ],
+                          ),
+                          Positioned(
+                            right: 0,
+                            child: Row(
+                              children: [
+                                const SizedBox(
+                                  width: 30,
+                                ),
+                                Text(
+                                  'Chessboard',
+                                  style: defText,
+                                ),
+                                Transform.scale(
+                                  scale: 0.75,
+                                  child: ValueListenableBuilder<bool?>(
+                                      valueListenable: _showBoardNotifier,
+                                      builder: (context, value, child) {
+                                        return CupertinoSwitch(
+                                          trackColor: Colors.grey,
+                                          activeColor: green,
+                                          value: _showBoardNotifier.value,
+                                          onChanged: (value) {
+                                            _showBoardNotifier.value = value;
+                                          },
+                                        );
+                                      }),
+                                ),
+                              ],
                             ),
-                            Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                  color: sand.toMove == 'w'
-                                      ? Colors.white
-                                      : Colors.black,
-                                  border:
-                                      Border.all(color: Colors.white, width: 2),
-                                  borderRadius: BorderRadius.circular(8)),
-                            ),
-                            const SizedBox(
-                              width: 5,
-                            ),
-                            Text(
-                              sand.toMove == 'w'
-                                  ? 'White to Move'
-                                  : 'Black to Move',
-                              style: defText,
-                            )
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 15,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(5.0),
-                          child: ValueListenableBuilder<String>(
-                              valueListenable: _pgnNotifier,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(
+                        height: 30,
+                      ),
+                      ValueListenableBuilder<bool>(
+                          valueListenable: _showBoardNotifier,
+                          builder: (context, value, child) {
+                            List<String> moves = sand.moves.split(' ');
+                            return value
+                                ? ChessboardWidget(
+                                    fen: applyMoveToFen(sand.fen, moves[0]),
+                                    pieces: false)
+                                : const Center();
+                          }),
+                      Row(
+                        children: [
+                          const SizedBox(
+                            width: 5,
+                          ),
+                          Icon(CupertinoIcons.time, size: 32, color: green),
+                          const SizedBox(
+                            width: 5,
+                          ),
+                          ValueListenableBuilder<String>(
+                              valueListenable: _timeNotifier,
                               builder: (context, value, child) {
-                                return buildChessText(value);
-                              }),
-                        ),
-                        const SizedBox(
-                          height: 15,
-                        ),
-                        SizedBox(
-                          width: screenWidth / 2,
-                          child: ValueListenableBuilder<List<bool?>>(
-                              valueListenable: _answerTF,
-                              builder: (context, value, child) {
-                                return TextField(
-                                  controller: _controller,
-                                  style: subtitle,
-                                  maxLength: 10,
-                                  onSubmitted: (value) => checkAnswer(sand),
-                                  cursorColor: Colors.white,
-                                  decoration: InputDecoration(
-                                      hintText: 'Enter move eg(Bxc3)',
-                                      hintStyle: defTextLight,
-                                      counterText: '',
-                                      disabledBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          borderSide: BorderSide(
-                                              width: 2,
-                                              color: _answerTF.value[0]
-                                                  ? green
-                                                  : mono)),
-                                      focusedBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          borderSide: BorderSide(
-                                              width: 2,
-                                              color: _answerTF.value[1]
-                                                  ? Colors.red
-                                                  : _answerTF.value[0]
-                                                      ? green
-                                                      : Colors.white)),
-                                      errorBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          borderSide: BorderSide(
-                                              width: 2,
-                                              color: _answerTF.value[0]
-                                                  ? green
-                                                  : mono)),
-                                      border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          borderSide: BorderSide(
-                                              width: 2,
-                                              color: _answerTF.value[0]
-                                                  ? green
-                                                  : mono)),
-                                      enabledBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          borderSide: BorderSide(
-                                              width: 2,
-                                              color: _answerTF.value[0]
-                                                  ? green
-                                                  : mono))),
+                                return Text(
+                                  value,
+                                  style: defText,
                                 );
                               }),
-                        ),
-                        const SizedBox(
-                          height: 15,
-                        ),
-                        ValueListenableBuilder<bool>(
-                            valueListenable: _isFinishedNotifier,
-                            builder: (context, value, child) {
-                              return !value
-                                  ? Row(
-                                      children: [
-                                        const SizedBox(
-                                          width: 15,
-                                        ),
-                                        Expanded(
-                                          child: SizedBox(
-                                              //width: screenWidth - 15,
-                                              height: 70,
-                                              child: TextButton(
-                                                style: TextButton.styleFrom(
-                                                  backgroundColor: green,
-                                                  shape:
-                                                      const RoundedRectangleBorder(
+                          const SizedBox(
+                            width: 50,
+                          ),
+                          Text(
+                            sand.theme.contains('middle')
+                                ? 'Middlegame Puzzle'
+                                : sand.theme.contains('end')
+                                    ? 'Endgame Puzzle'
+                                    : 'Opening Puzzle',
+                            style: defTextGreen,
+                          )
+                        ],
+                      ),
+                      const SizedBox(
+                        height: 15,
+                      ),
+                      ValueListenableBuilder<bool>(
+                          valueListenable: _showPgn,
+                          builder: (context, value, child) {
+                            return value
+                                ? const Center()
+                                : endgame(sand.fen, sand, screenWidth);
+                          }),
+                      ValueListenableBuilder<bool>(
+                          valueListenable: _showPgn,
+                          builder: (context, value, child) {
+                            return value
+                                ? Padding(
+                                    padding: const EdgeInsets.all(5.0),
+                                    child: ValueListenableBuilder<String>(
+                                        valueListenable: _pgnNotifier,
+                                        builder: (context, value, child) {
+                                          return buildChessText(value);
+                                        }),
+                                  )
+                                : const Center();
+                          }),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      Row(
+                        children: [
+                          const SizedBox(
+                            width: 5,
+                          ),
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                                color: sand.toMove == 'w'
+                                    ? Colors.white
+                                    : Colors.black,
+                                border:
+                                    Border.all(color: Colors.white, width: 2),
+                                borderRadius: BorderRadius.circular(8)),
+                          ),
+                          const SizedBox(
+                            width: 5,
+                          ),
+                          Text(
+                            sand.toMove == 'w'
+                                ? 'White to Move'
+                                : 'Black to Move',
+                            style: defText,
+                          )
+                        ],
+                      ),
+                      const SizedBox(
+                        height: 15,
+                      ),
+                      Text(
+                        sand.puzzleId,
+                        style: defText,
+                      ),
+                      ValueListenableBuilder<bool>(
+                          valueListenable: _isFinishedNotifier,
+                          builder: (context, value, child) {
+                            return value
+                                ? Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        'Correct Move: ',
+                                        style: defText,
+                                      ),
+                                      Text(
+                                        '${sand.solution?[0]}',
+                                        style: subtitleGreen,
+                                      ),
+                                    ],
+                                  )
+                                : const Center();
+                          }),
+                      ValueListenableBuilder<bool>(
+                          valueListenable: _isFinishedNotifier,
+                          builder: (context, value, child) {
+                            return value
+                                ? const Center()
+                                : SizedBox(
+                                    width: screenWidth / 2,
+                                    child: ValueListenableBuilder<List<bool?>>(
+                                        valueListenable: _answerTF,
+                                        builder: (context, value, child) {
+                                          return TextField(
+                                            controller: _controller,
+                                            style: subtitle,
+                                            maxLength: 10,
+                                            onSubmitted: (value) =>
+                                                checkAnswer(sand),
+                                            cursorColor: Colors.white,
+                                            decoration: InputDecoration(
+                                                hintText: 'Enter move eg(Bxc3)',
+                                                hintStyle: defTextLight,
+                                                counterText: '',
+                                                disabledBorder: OutlineInputBorder(
+                                                    borderRadius: BorderRadius.circular(
+                                                        8),
+                                                    borderSide: BorderSide(
+                                                        width: 2,
+                                                        color: _answerTF.value[0]
+                                                            ? green
+                                                            : mono)),
+                                                focusedBorder:
+                                                    OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                                8),
+                                                        borderSide: BorderSide(
+                                                            width: 2,
+                                                            color: _answerTF
+                                                                    .value[1]
+                                                                ? Colors.red
+                                                                : _answerTF.value[
+                                                                        0]
+                                                                    ? green
+                                                                    : Colors
+                                                                        .white)),
+                                                errorBorder: OutlineInputBorder(
                                                     borderRadius:
-                                                        BorderRadius.all(
-                                                            Radius.circular(8)),
-                                                  ),
-                                                ),
-                                                onPressed: () async {
-                                                  if (_controller
-                                                      .text.isNotEmpty) {}
-                                                  await checkAnswer(sand);
-
-                                                  /*
-                                          markPuzzleAsSolved(sand.puzzleId).then((_) {
-                                            _future = getPuzzleWithStats();
-                                          });*/
-                                                },
-                                                child: Text(
-                                                  'Check Solution',
-                                                  style: buttonText,
-                                                ),
-                                              )),
-                                        ),
-                                        const SizedBox(
-                                          width: 15,
-                                        ),
-                                        SizedBox(
-                                            width: screenWidth / 2 - 50,
+                                                        BorderRadius.circular(
+                                                            8),
+                                                    borderSide: BorderSide(
+                                                        width: 2,
+                                                        color: _answerTF.value[0]
+                                                            ? green
+                                                            : mono)),
+                                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(width: 2, color: _answerTF.value[0] ? green : mono)),
+                                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(width: 2, color: _answerTF.value[0] ? green : mono))),
+                                          );
+                                        }),
+                                  );
+                          }),
+                      const SizedBox(
+                        height: 15,
+                      ),
+                      ValueListenableBuilder<bool>(
+                          valueListenable: _isFinishedNotifier,
+                          builder: (context, value, child) {
+                            return !value
+                                ? Row(
+                                    children: [
+                                      const SizedBox(
+                                        width: 15,
+                                      ),
+                                      Expanded(
+                                        child: SizedBox(
+                                            //width: screenWidth - 15,
                                             height: 70,
                                             child: TextButton(
                                               style: TextButton.styleFrom(
-                                                backgroundColor: mono,
+                                                backgroundColor: green,
                                                 shape:
                                                     const RoundedRectangleBorder(
                                                   borderRadius:
@@ -597,70 +641,98 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                                                           Radius.circular(8)),
                                                 ),
                                               ),
-                                              onPressed: () async =>
-                                                  await giveUp(),
-                                              child:
-                                                  ValueListenableBuilder<int?>(
-                                                      valueListenable: _giveUp,
-                                                      builder: (context, value,
-                                                          child) {
-                                                        return Text(
-                                                          value == 1
-                                                              ? 'Are you sure?'
-                                                              : 'Give Up?',
-                                                          style: buttonText,
-                                                          textAlign:
-                                                              TextAlign.center,
-                                                        );
-                                                      }),
+                                              onPressed: () async {
+                                                if (_controller
+                                                    .text.isNotEmpty) {}
+                                                await checkAnswer(sand);
+
+                                                /*
+                                        markPuzzleAsSolved(sand.puzzleId).then((_) {
+                                          _future = getPuzzleWithStats();
+                                        });*/
+                                              },
+                                              child: Text(
+                                                'Check Solution',
+                                                style: buttonText,
+                                              ),
                                             )),
-                                        const SizedBox(
-                                          width: 15,
+                                      ),
+                                      const SizedBox(
+                                        width: 15,
+                                      ),
+                                      SizedBox(
+                                          width: screenWidth / 2 - 50,
+                                          height: 70,
+                                          child: TextButton(
+                                            style: TextButton.styleFrom(
+                                              backgroundColor: mono,
+                                              shape:
+                                                  const RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.all(
+                                                    Radius.circular(8)),
+                                              ),
+                                            ),
+                                            onPressed: () async =>
+                                                await giveUp(),
+                                            child: ValueListenableBuilder<int?>(
+                                                valueListenable: _giveUp,
+                                                builder:
+                                                    (context, value, child) {
+                                                  return Text(
+                                                    value == 1
+                                                        ? 'Are you sure?'
+                                                        : 'Give Up?',
+                                                    style: buttonText,
+                                                    textAlign: TextAlign.center,
+                                                  );
+                                                }),
+                                          )),
+                                      const SizedBox(
+                                        width: 15,
+                                      ),
+                                    ],
+                                  )
+                                : const Center();
+                          }),
+                      ValueListenableBuilder<bool>(
+                          valueListenable: _showSolutionNotifier,
+                          builder: (context, value, child) {
+                            List<String> moves = sand.moves.split(' ');
+                            return value
+                                ? ChessboardWidget(
+                                    fen: applyMoveToFen(sand.fen, moves[0]),
+                                    pieces: true)
+                                : const Center();
+                          }),
+                      const SizedBox(
+                        height: 15,
+                      ),
+                      ValueListenableBuilder<bool?>(
+                          valueListenable: _isFinishedNotifier,
+                          builder: (context, value, child) {
+                            return value!
+                                ? SizedBox(
+                                    width: screenWidth - 15,
+                                    height: 70,
+                                    child: TextButton(
+                                      style: TextButton.styleFrom(
+                                        backgroundColor: mono,
+                                        shape: const RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(8)),
                                         ),
-                                      ],
-                                    )
-                                  : const Center();
-                            }),
-                        ValueListenableBuilder<bool>(
-                            valueListenable: _showSolutionNotifier,
-                            builder: (context, value, child) {
-                              List<String> moves = sand.moves.split(' ');
-                              return value
-                                  ? ChessboardWidget(
-                                      fen: applyMoveToFen(sand.fen, moves[0]),
-                                      pieces: true)
-                                  : const Center();
-                            }),
-                        const SizedBox(
-                          height: 30,
-                        ),
-                        ValueListenableBuilder<bool?>(
-                            valueListenable: _isFinishedNotifier,
-                            builder: (context, value, child) {
-                              return value!
-                                  ? SizedBox(
-                                      width: screenWidth - 15,
-                                      height: 70,
-                                      child: TextButton(
-                                        style: TextButton.styleFrom(
-                                          backgroundColor: mono,
-                                          shape: const RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.all(
-                                                Radius.circular(8)),
-                                          ),
-                                        ),
-                                        onPressed: () =>
-                                            nextPuzzle(sand.puzzleId),
-                                        child: Text(
-                                          'Next Puzzle',
-                                          style: buttonText,
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ))
-                                  : const Center();
-                            }),
-                      ],
-                    ),
+                                      ),
+                                      onPressed: () =>
+                                          nextPuzzle(sand.puzzleId),
+                                      child: Text(
+                                        'Next Puzzle',
+                                        style: buttonText,
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ))
+                                : const Center();
+                          }),
+                    ],
                   );
                 }
               },
@@ -807,23 +879,97 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       ratingChanged = false;
       stopwatch.reset();
       stopwatch.start();
+      _showPgn.value = false;
       prefs.remove('doneBefore');
       _controller.clear();
     }
   }
 }
 
-Widget endgame() {
+Widget endgame(String fen, Puzzle puzzle, double screenWidth) {
+  List<String> movesArray = [];
+
+  movesArray = puzzle.moves.split(' ');
+  print(movesArray[0]);
+
+  List<String> pieces = getAllPieces(applyMoveToFen(fen, movesArray[0]));
+  List<String> whitePieces = [];
+  List<String> blackPieces = [];
+
+  for (int i = 0; i < pieces.length; i++) {
+    if (pieces[i][0] == pieces[i][0].toUpperCase()) {
+      whitePieces.add(pieces[i]);
+    } else {
+      blackPieces.add(pieces[i]);
+    }
+  }
+  String white = whitePieces.toString();
+  white = white.replaceAll('[', '');
+  white = white.replaceAll(']', '');
+
+  String black = blackPieces.toString();
+  black = black.replaceAll('[', '');
+  black = black.replaceAll(']', '');
+
   return Column(
+    mainAxisAlignment: MainAxisAlignment.start,
     children: [
-      Text(
-        'White Pieces',
-        style: defText,
+      Row(
+        children: [
+          const SizedBox(
+            width: 5,
+          ),
+          Text(
+            'White Pieces: ',
+            style: defTextGreen,
+          ),
+        ],
       ),
-      Text(
-        'Black Pieces',
-        style: defText,
-      )
+      Row(
+        children: [
+          const SizedBox(
+            width: 5,
+          ),
+          SizedBox(
+            width: screenWidth - 15,
+            child: Text(
+              white,
+              style: defTextLight,
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(
+        height: 15,
+      ),
+      Row(
+        children: [
+          const SizedBox(
+            width: 5,
+          ),
+          Text(
+            'Black Pieces: ',
+            style: defTextBlue,
+          ),
+        ],
+      ),
+      Row(
+        children: [
+          const SizedBox(
+            width: 5,
+          ),
+          SizedBox(
+            width: screenWidth - 15,
+            child: Text(
+              black,
+              style: defTextLight,
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(
+        height: 15,
+      ),
     ],
   );
 }

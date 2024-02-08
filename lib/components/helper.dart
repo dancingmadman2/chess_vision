@@ -18,18 +18,19 @@ class Puzzle {
   final String theme;
   final String toMove;
   final String pgn;
+  List<String>? solution;
 
   // ... other fields ...
 
-  Puzzle({
-    required this.puzzleId,
-    required this.fen,
-    required this.moves,
-    required this.rating,
-    required this.theme,
-    required this.toMove,
-    required this.pgn,
-  });
+  Puzzle(
+      {required this.puzzleId,
+      required this.fen,
+      required this.moves,
+      required this.rating,
+      required this.theme,
+      required this.toMove,
+      required this.pgn,
+      this.solution});
 
   Map<String, dynamic> toMap() {
     return {
@@ -140,16 +141,16 @@ class DatabaseHelper {
       final row = rowsAsListOfValues[i];
 
       final Puzzle puzzle = Puzzle(
-          puzzleId: row[0],
-          fen: row[1],
-          moves: row[2],
-          rating: row[3],
-          theme: row[6],
-          toMove: row[9],
-          pgn: row[8]
+        puzzleId: row[0],
+        fen: row[1],
+        moves: row[2],
+        rating: row[3],
+        theme: row[6],
+        toMove: row[9],
+        pgn: row[8],
 
-          // ... other fields ...
-          );
+        // ... other fields ...
+      );
 
       puzzles.add(puzzle);
     }

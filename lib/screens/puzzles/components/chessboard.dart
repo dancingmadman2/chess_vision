@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:chess_vision/styles.dart';
 import 'package:flutter/material.dart';
 

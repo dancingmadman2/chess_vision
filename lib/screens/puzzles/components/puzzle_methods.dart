@@ -146,3 +146,56 @@ bool isCheck(String fen) {
   // Check if the king is under attack (check)
   return false;
 }
+
+String getPiece(String fenBoard, String position) {
+  // Parse FEN board
+  List<String> rows = fenBoard.split('/');
+  List<String> board = [];
+  for (String row in rows) {
+    for (int i = 0; i < row.length; i++) {
+      if (row[i] == '1' ||
+          row[i] == '2' ||
+          row[i] == '3' ||
+          row[i] == '4' ||
+          row[i] == '5' ||
+          row[i] == '6' ||
+          row[i] == '7' ||
+          row[i] == '8') {
+        // Add empty squares
+        int count = int.parse(row[i]);
+        for (int j = 0; j < count; j++) {
+          board.add('');
+        }
+      } else {
+        // Add pieces
+        board.add(row[i]);
+      }
+    }
+  }
+
+  // Convert position to indices
+  int file = position.codeUnitAt(0) - 'a'.codeUnitAt(0);
+  int rank = 8 - int.parse(position[1]);
+
+  // Get piece at the specified square
+  String piece = board[rank * 8 + file];
+
+  // Format piece in chess notation
+  String chessNotation = piece.isNotEmpty ? '$piece$position' : '';
+
+  return chessNotation;
+}
+
+List<String> getAllPieces(String fen) {
+  final List<String> files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+  //final List<String> ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+  List<String> pieces = [];
+
+  for (int rank = 8; rank >= 1; rank--) {
+    for (String file in files) {
+      pieces.add(getPiece(fen, file + rank.toString()));
+    }
+  }
+  pieces.removeWhere((element) => element == '');
+  return pieces;
+}
