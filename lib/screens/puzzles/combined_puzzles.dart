@@ -733,8 +733,8 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                           ),
                           Text(
                             sand.toMove == 'w'
-                                ? 'White to Move'
-                                : 'Black to Move',
+                                ? 'White to Play'
+                                : 'Black to Play',
                             style: defText,
                           )
                         ],

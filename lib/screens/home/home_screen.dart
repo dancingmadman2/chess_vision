@@ -83,87 +83,164 @@ class _HomeScreenState extends State<HomeScreen> {
                 ));
               } else {
                 final User? userStats = snapshot.data;
-                return Column(
+                return Stack(
                   children: [
-                    SizedBox(
-                        width: screenWidth - 15, child: RadarChartSample1()),
-                    /*
-              SizedBox(
-                  width: screenWidth - 15,
-                  height: 150,
-                  child: RatingProgressChart()),*/
-                    const SizedBox(
-                      height: 15,
-                    ),
-                    Row(
-                      children: [
-                        const SizedBox(
-                          width: 5,
-                        ),
-                        Text(
-                          'Puzzle Rating: ',
-                          style: defText,
-                        ),
-                        Text(
-                          '${userStats?.rating ?? '31'}',
-                          style: subtitleGreen,
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        const SizedBox(
-                          width: 5,
-                        ),
-                        Text(
-                          'Accuracy: ',
-                          style: defText,
-                        ),
-                        Text(
-                          userStats!.puzzlesPlayed != 0
-                              ? '${(userStats.puzzlesWon / userStats.puzzlesPlayed * 100).toStringAsFixed(2)} %'
-                              : '0 %',
-                          style: subtitleGreen,
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    InkWell(
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () {},
-                      child: Recommendations(
-                        screenWidth: screenWidth,
-                        image: 'assets/images/kesh.png',
-                        title: 'Listen to Games',
-                        description:
-                            'Listen to sample games to improve your overall blindfold skills.',
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 7.5,
-                    ),
-                    SizedBox(
+                    SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          SizedBox(
+                              width: screenWidth - 15,
+                              child: RadarChartSample1()),
+                          /*
+                                      SizedBox(
                         width: screenWidth - 15,
-                        height: 65,
-                        child: TextButton(
-                          style: TextButton.styleFrom(
-                            backgroundColor: green,
-                            shape: const RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(8)),
+                        height: 150,
+                        child: RatingProgressChart()),*/
+                          const SizedBox(
+                            height: 15,
+                          ),
+                          Row(
+                            children: [
+                              const SizedBox(
+                                width: 5,
+                              ),
+                              Text(
+                                'Puzzle Rating: ',
+                                style: defText,
+                              ),
+                              Text(
+                                '${userStats?.rating ?? '31'}',
+                                style: subtitleGreen,
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              const SizedBox(
+                                width: 5,
+                              ),
+                              Text(
+                                'Accuracy: ',
+                                style: defText,
+                              ),
+                              Text(
+                                userStats!.puzzlesPlayed != 0
+                                    ? '${(userStats.puzzlesWon / userStats.puzzlesPlayed * 100).toStringAsFixed(2)} %'
+                                    : '0 %',
+                                style: subtitleGreen,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          SizedBox(
+                            width: screenWidth - 10,
+                            child: Column(
+                              children: [
+                                Stack(
+                                  children: [
+                                    LinearProgressIndicator(
+                                      borderRadius: BorderRadius.circular(4),
+                                      minHeight: 20,
+                                      value: (userStats.rating - 1000) / 1500,
+                                      color: green,
+                                    ),
+                                    Container(
+                                      width: 5,
+                                      height: 20,
+                                      decoration: BoxDecoration(
+                                        color: green,
+                                      ),
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        Container(
+                                          width: 5,
+                                          height: 20,
+                                          decoration: BoxDecoration(
+                                            color: primary,
+                                          ),
+                                        ),
+                                        Container(
+                                          width: 5,
+                                          height: 20,
+                                          decoration: BoxDecoration(
+                                            color: primary,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  ],
+                                ),
+                                const SizedBox(
+                                  height: 5,
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    Text(
+                                      'Beginner',
+                                      style: defText,
+                                    ),
+                                    Text(
+                                      'Intermediate ',
+                                      style: defText,
+                                    ),
+                                    Text(
+                                      'Expert',
+                                      style: defText,
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                          onPressed: () {
-                            // navigate to play against bot
-                          },
-                          child: Text(
-                            'Play',
-                            style: buttonText,
+                          const SizedBox(
+                            height: 7.5,
                           ),
-                        )),
-                    const SizedBox(
-                      height: 7.5,
-                    )
+                          InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: () {},
+                            child: Recommendations(
+                              screenWidth: screenWidth,
+                              image: 'assets/images/kesh.png',
+                              title: 'Listen to Games',
+                              description:
+                                  'Listen to sample games to improve your overall blindfold skills.',
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 30,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      child: SizedBox(
+                          width: screenWidth - 15,
+                          height: 65,
+                          child: TextButton(
+                            style: TextButton.styleFrom(
+                              backgroundColor: green,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(8)),
+                              ),
+                            ),
+                            onPressed: () {
+                              // navigate to play against bot
+                            },
+                            child: Text(
+                              'Play',
+                              style: buttonText,
+                            ),
+                          )),
+                    ),
                   ],
                 );
               }

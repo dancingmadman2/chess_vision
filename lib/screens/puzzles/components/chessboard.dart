@@ -37,16 +37,18 @@ class ChessboardWidget extends StatelessWidget {
                     Container(
                       width: 40,
                       height: 40,
-                      color: getPieceAndPosition(fen, file + rank.toString())
-                                  .contains(moves[1]
-                                      .substring(2, 4)
-                                      .toLowerCase()
-                                      .trim()) ||
-                              getPieceAndPosition(fen, file + rank.toString())
-                                  .contains(moves[1]
-                                      .substring(0, 2)
-                                      .toLowerCase()
-                                      .trim())
+                      color: (getPieceAndPosition(fen, file + rank.toString())
+                                      .contains(moves[1]
+                                          .substring(2, 4)
+                                          .toLowerCase()
+                                          .trim()) ||
+                                  getPieceAndPosition(
+                                          fen, file + rank.toString())
+                                      .contains(moves[1]
+                                          .substring(0, 2)
+                                          .toLowerCase()
+                                          .trim())) &&
+                              pieces
                           ? green
                           : (file.codeUnitAt(0) + rank) % 2 == 0
                               ? mono
