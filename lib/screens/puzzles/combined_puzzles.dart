@@ -8,7 +8,6 @@ import 'package:flutter/cupertino.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
-import 'package:get/get.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -29,6 +28,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
   int countCheckAfterWrongAnswer = 0;
 
   late Timer _timer;
+  late Timer _timerChronometer;
   bool isFinished = false;
   bool hasBeenWrong = false;
   bool ratingChanged = false;
@@ -201,6 +201,153 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     return parsed;
   }
 
+  Widget buildChessText(String pgn, Puzzle puzzle) {
+    List<String> parts = parsePgn(pgn);
+    List<String> solution = parseSolution(puzzle.moves, puzzle.fen)['solution'];
+
+    List<TextSpan> spans = [];
+
+    for (int i = 0; i < parts.length; i++) {
+      final part = parts[i];
+
+      bool isSolution = solution.contains(part) &&
+          i > parts.length - (solution.length * 2 + 3) &&
+          isFinished;
+
+      final isNumberFollowedByPeriod = RegExp(r'\d+\. ').hasMatch(part);
+      spans.add(
+        TextSpan(
+          text: part,
+          style: isNumberFollowedByPeriod
+              ? defTextBlue
+              : isSolution
+                  ? defTextGreen
+                  : null,
+        ),
+      );
+      if (i < parts.length - 1) {
+        spans.add(const TextSpan(text: ' '));
+      }
+    }
+
+    return RichText(
+      text: TextSpan(children: spans, style: defTextLight),
+    );
+  }
+
+  Widget endgame(String fen, Puzzle puzzle, double screenWidth, String text) {
+    List<String> movesArray = [];
+
+    movesArray = puzzle.moves.split(' ');
+
+    List<String> pieces = getAllPieces(applyMoveToFen(fen, movesArray[0]));
+    List<String> whitePieces = [];
+    List<String> blackPieces = [];
+
+    for (int i = 0; i < pieces.length; i++) {
+      if (pieces[i][0] == pieces[i][0].toUpperCase()) {
+        whitePieces.add(pieces[i]);
+      } else {
+        blackPieces.add(pieces[i]);
+      }
+    }
+    String white = whitePieces.toString();
+    white = white.replaceAll('[', '');
+    white = white.replaceAll(']', '');
+
+    String black = blackPieces.toString();
+    black = black.replaceAll('[', '');
+    black = black.replaceAll(']', '');
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const SizedBox(
+              width: 5,
+            ),
+            Text(
+              'White Pieces: ',
+              style: defTextBlue,
+            ),
+          ],
+        ),
+        Row(
+          children: [
+            const SizedBox(
+              width: 5,
+            ),
+            SizedBox(
+              width: screenWidth - 15,
+              child: Text(
+                white,
+                style: defTextLight,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(
+          height: 15,
+        ),
+        Row(
+          children: [
+            const SizedBox(
+              width: 5,
+            ),
+            Text(
+              'Black Pieces: ',
+              style: defTextBlue,
+            ),
+          ],
+        ),
+        Row(
+          children: [
+            const SizedBox(
+              width: 5,
+            ),
+            SizedBox(
+              width: screenWidth - 15,
+              child: Text(
+                black,
+                style: defTextLight,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(
+          height: 5,
+        ),
+        Row(
+          children: [
+            const SizedBox(
+              width: 5,
+            ),
+            SizedBox(
+              width: screenWidth - 15,
+              child: Text(
+                'Moves',
+                style: defText,
+              ),
+            ),
+          ],
+        ),
+        Row(
+          children: [
+            const SizedBox(
+              width: 5,
+            ),
+            SizedBox(
+                width: screenWidth - 15, child: buildChessText(text, puzzle)),
+          ],
+        ),
+        const SizedBox(
+          height: 15,
+        ),
+      ],
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -216,9 +363,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     _showPgn = ValueNotifier(false);
     _textController = ValueNotifier('');
     stopwatch.start();
-    Timer.periodic(const Duration(seconds: 1), (timer) {
-      //final prefs = await SharedPreferences.getInstance();
-      //prefs.setInt('timeSpent', totalSeconds);
+    _timerChronometer = Timer.periodic(const Duration(seconds: 1), (timer) {
       int totalSeconds = stopwatch.elapsed.inSeconds;
 
       int minutes = totalSeconds ~/ 60;
@@ -252,6 +397,8 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       _showBoardNotifier.dispose();
       _pgnNotifier.dispose();
       stopwatch.stop();
+      _timerChronometer.cancel();
+      _timeNotifier.dispose();
 
       _answer.dispose();
       _showPgn.dispose();
@@ -291,19 +438,29 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                 InkWell(
                   borderRadius: BorderRadius.circular(8),
                   onTap: () {},
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        CupertinoIcons.exclamationmark_circle_fill,
-                        size: 36,
-                        color: green,
-                      ),
-                      Text(
-                        '  Report Puzzle  ',
-                        style: defTextLight,
-                      ),
-                    ],
+                  child: SizedBox(
+                    height: 60,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(
+                          width: 5,
+                        ),
+                        Icon(
+                          CupertinoIcons.exclamationmark_circle_fill,
+                          size: 36,
+                          color: green,
+                        ),
+                        Text(
+                          ' Report \n Puzzle',
+                          textAlign: TextAlign.center,
+                          style: defTextLight,
+                        ),
+                        const SizedBox(
+                          width: 5,
+                        )
+                      ],
+                    ),
                   ),
                 ),
                 Align(
@@ -320,12 +477,16 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                   child: InkWell(
                     borderRadius: BorderRadius.circular(8),
                     onTap: () {},
-                    child: const Padding(
-                      padding: EdgeInsets.only(right: 5.0),
-                      child: Icon(
-                        Icons.history_rounded,
-                        color: Colors.white,
-                        size: 36,
+                    child: const SizedBox(
+                      height: 60,
+                      width: 60,
+                      child: Padding(
+                        padding: EdgeInsets.only(right: 5.0),
+                        child: Icon(
+                          Icons.history_rounded,
+                          color: Colors.white,
+                          size: 36,
+                        ),
                       ),
                     ),
                   ),
@@ -480,36 +641,42 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                             return value
                                 ? ChessboardWidget(
                                     fen: applyMoveToFen(sand.fen, moves[0]),
-                                    pieces: false)
+                                    pieces: false,
+                                    moves: sand.moves.split(' '),
+                                  )
                                 : const Center();
                           }),
-                      Row(
+                      Stack(
                         children: [
-                          const SizedBox(
-                            width: 5,
+                          Row(
+                            children: [
+                              const SizedBox(
+                                width: 5,
+                              ),
+                              Icon(CupertinoIcons.time, size: 32, color: green),
+                              const SizedBox(
+                                width: 5,
+                              ),
+                              ValueListenableBuilder<String>(
+                                  valueListenable: _timeNotifier,
+                                  builder: (context, value, child) {
+                                    return Text(
+                                      value,
+                                      style: defText,
+                                    );
+                                  }),
+                            ],
                           ),
-                          Icon(CupertinoIcons.time, size: 32, color: green),
-                          const SizedBox(
-                            width: 5,
-                          ),
-                          ValueListenableBuilder<String>(
-                              valueListenable: _timeNotifier,
-                              builder: (context, value, child) {
-                                return Text(
-                                  value,
-                                  style: defText,
-                                );
-                              }),
-                          const SizedBox(
-                            width: 50,
-                          ),
-                          Text(
-                            sand.theme.contains('middle')
-                                ? 'Middlegame Puzzle'
-                                : sand.theme.contains('end')
-                                    ? 'Endgame Puzzle'
-                                    : 'Opening Puzzle',
-                            style: defTextGreen,
+                          Align(
+                            alignment: Alignment.center,
+                            child: Text(
+                              sand.theme.contains('middle')
+                                  ? 'Middlegame Puzzle'
+                                  : sand.theme.contains('end')
+                                      ? 'Endgame Puzzle'
+                                      : 'Opening Puzzle',
+                              style: defTextGreen,
+                            ),
                           )
                         ],
                       ),
@@ -537,7 +704,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                                     child: ValueListenableBuilder<String>(
                                         valueListenable: _pgnNotifier,
                                         builder: (context, value, child) {
-                                          return buildChessText(value);
+                                          return buildChessText(value, sand);
                                         }),
                                   )
                                 : const Center();
@@ -711,7 +878,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                                               ),
                                             ),
                                             onPressed: () async =>
-                                                await giveUp(),
+                                                await giveUp(sand),
                                             child: ValueListenableBuilder<int?>(
                                                 valueListenable: _giveUp,
                                                 builder:
@@ -739,7 +906,9 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                             return value
                                 ? ChessboardWidget(
                                     fen: applyMoveToFen(sand.fen, moves[0]),
-                                    pieces: true)
+                                    pieces: true,
+                                    moves: sand.moves.split(' '),
+                                  )
                                 : const Center();
                           }),
                       const SizedBox(
@@ -770,6 +939,9 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
                                     ))
                                 : const Center();
                           }),
+                      const SizedBox(
+                        height: 30,
+                      ),
                     ],
                   );
                 }
@@ -781,7 +953,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     );
   }
 
-  Future<void> giveUp() async {
+  Future<void> giveUp(Puzzle puzzle) async {
     DatabaseHelper db = DatabaseHelper();
 
     if (!isFinished) {
@@ -801,6 +973,14 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       tryGiveUp++;
       _giveUp.value = tryGiveUp;
 
+      Map<String, dynamic> anan = parseSolution(puzzle.moves, puzzle.fen);
+
+      List<String> solution = anan['solution'];
+      List<String> botMoves = anan['bot'];
+
+      String pgn = '';
+      String pgnT = '';
+
       if (!_timer.isActive) {
         _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
           tryGiveUp = 0;
@@ -817,6 +997,20 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
           if (userRating - 8 >= 900) {
             db.updateUserRating(userRating - 8);
           }
+
+          pgn = _pgnNotifier.value;
+
+          for (int i = 0; i < solution.length; i++) {
+            pgn = '$pgn ${solution[i]}';
+            pgnT = '$pgnT ${solution[i]}';
+
+            if (i < botMoves.length) {
+              pgn = '$pgn ${botMoves[i]}';
+              pgnT = '$pgnT ${botMoves[i]}';
+            }
+          }
+          _textController.value = pgnT;
+          _pgnNotifier.value = pgn;
 
           _rating.value = -8;
         }
@@ -841,7 +1035,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
     int puzzlesLost = -1;
     final prefs = await SharedPreferences.getInstance();
     Map<String, dynamic> anan = parseSolution(sand.moves, sand.fen);
-    //List<String> solution = parseSolution(sand.moves, sand.fen)['solution'];
+
     List<String> solution = anan['solution'];
     List<String> botMoves = anan['bot'];
     // fetch the user rating
@@ -937,141 +1131,4 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       _controller.clear();
     }
   }
-}
-
-Widget endgame(String fen, Puzzle puzzle, double screenWidth, String text) {
-  List<String> movesArray = [];
-
-  movesArray = puzzle.moves.split(' ');
-
-  List<String> pieces = getAllPieces(applyMoveToFen(fen, movesArray[0]));
-  List<String> whitePieces = [];
-  List<String> blackPieces = [];
-
-  for (int i = 0; i < pieces.length; i++) {
-    if (pieces[i][0] == pieces[i][0].toUpperCase()) {
-      whitePieces.add(pieces[i]);
-    } else {
-      blackPieces.add(pieces[i]);
-    }
-  }
-  String white = whitePieces.toString();
-  white = white.replaceAll('[', '');
-  white = white.replaceAll(']', '');
-
-  String black = blackPieces.toString();
-  black = black.replaceAll('[', '');
-  black = black.replaceAll(']', '');
-
-  return Column(
-    mainAxisAlignment: MainAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          const SizedBox(
-            width: 5,
-          ),
-          Text(
-            'White Pieces: ',
-            style: defTextBlue,
-          ),
-        ],
-      ),
-      Row(
-        children: [
-          const SizedBox(
-            width: 5,
-          ),
-          SizedBox(
-            width: screenWidth - 15,
-            child: Text(
-              white,
-              style: defTextLight,
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(
-        height: 15,
-      ),
-      Row(
-        children: [
-          const SizedBox(
-            width: 5,
-          ),
-          Text(
-            'Black Pieces: ',
-            style: defTextBlue,
-          ),
-        ],
-      ),
-      Row(
-        children: [
-          const SizedBox(
-            width: 5,
-          ),
-          SizedBox(
-            width: screenWidth - 15,
-            child: Text(
-              black,
-              style: defTextLight,
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(
-        height: 5,
-      ),
-      Row(
-        children: [
-          const SizedBox(
-            width: 5,
-          ),
-          SizedBox(
-            width: screenWidth - 15,
-            child: Text(
-              'Moves',
-              style: defText,
-            ),
-          ),
-        ],
-      ),
-      Row(
-        children: [
-          const SizedBox(
-            width: 5,
-          ),
-          SizedBox(width: screenWidth - 15, child: buildChessText(text)),
-        ],
-      ),
-      const SizedBox(
-        height: 15,
-      ),
-    ],
-  );
-}
-
-Widget buildChessText(String pgn) {
-  List<String> parts = parsePgn(pgn);
-
-  List<TextSpan> spans = [];
-
-  for (int i = 0; i < parts.length; i++) {
-    final part = parts[i];
-
-    final isNumberFollowedByPeriod = RegExp(r'\d+\. ').hasMatch(part);
-    spans.add(
-      TextSpan(
-        text: part,
-        style: isNumberFollowedByPeriod ? defTextGreen : null,
-      ),
-    );
-    if (i < parts.length - 1) {
-      spans.add(const TextSpan(text: ' '));
-    }
-  }
-
-  return RichText(
-    text: TextSpan(children: spans, style: defTextLight),
-  );
 }

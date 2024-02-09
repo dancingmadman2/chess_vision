@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -20,6 +22,12 @@ TextStyle defTextBlue = GoogleFonts.lato(
     fontSize: 16, color: Colors.blue, fontWeight: FontWeight.bold);
 TextStyle defTextGreen =
     GoogleFonts.lato(fontSize: 16, color: green, fontWeight: FontWeight.bold);
+TextStyle defTextUnderline = GoogleFonts.lato(
+    fontSize: 16,
+    color: Colors.white,
+    fontWeight: FontWeight.bold,
+    decoration: TextDecoration.underline,
+    decorationColor: green);
 TextStyle defTextLight = GoogleFonts.lato(
   fontSize: 14,
   color: Colors.white,

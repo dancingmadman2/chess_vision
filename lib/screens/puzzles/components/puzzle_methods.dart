@@ -199,3 +199,66 @@ List<String> getAllPieces(String fen) {
   pieces.removeWhere((element) => element == '');
   return pieces;
 }
+
+Map<String, dynamic> parseMoves(
+  String moves,
+  String xFen,
+) {
+  /*
+    parsing logic for solution
+     moves:  h4h5 d4f2 g3b3 c2b3 a2b3 f2e1
+     current board: 4r1k1/5p2/6p1/2pRP3/PpPb3P/6Q1/P1q3P1/4R2K w - - 1 31
+     look at g3 return the piece
+     return example: Qb3
+     update current board(fen) after each move
+     iterate
+    */
+  List<String> movesArray = [];
+
+  movesArray = moves.split(' ');
+
+  List<String> botMoves = [];
+  List<String> parsedMoves = [];
+
+  for (int i = 0; i < movesArray.length; i++) {
+    String parsedMove = '';
+    //if piece is a pawn
+    if (getPieceAtSquare(xFen, movesArray[i].substring(0, 2)) == 'p') {
+      parsedMove = movesArray[i].substring(2, 4).toLowerCase();
+    } else {
+      parsedMove =
+          '${getPieceAtSquare(xFen, movesArray[i].substring(0, 2)).toUpperCase()} ${movesArray[i].substring(2, 4).toLowerCase()}';
+    }
+
+    // Capturing a piece
+    if (getPieceAtSquare(xFen, movesArray[i].substring(2, 4)).toLowerCase() !=
+        '') {
+      if (getPieceAtSquare(xFen, movesArray[i].substring(0, 2)) == 'p') {
+        parsedMove =
+            '${movesArray[i].substring(0, 1)}x ${movesArray[i].substring(2, 4).toLowerCase()}';
+      } else {
+        parsedMove =
+            '${getPieceAtSquare(xFen, movesArray[i].substring(0, 2)).toUpperCase()}x ${movesArray[i].substring(2, 4).toLowerCase()}';
+      }
+    }
+    parsedMove = parsedMove.replaceAll(' ', '');
+    if (isCheck(xFen)) {
+      parsedMove = '$parsedMove+';
+    }
+    parsedMoves.add(parsedMove);
+    xFen = applyMoveToFen(xFen, movesArray[i]);
+  }
+  List<String> solution = [];
+
+  for (int i = 0; i < parsedMoves.length; i++) {
+    if (i % 2 != 0) {
+      solution.add(parsedMoves[i]);
+    } else {
+      if (i != 0) {
+        botMoves.add(parsedMoves[i]);
+      }
+    }
+  }
+  Map<String, List<String>> parsed = {'solution': solution, 'bot': botMoves};
+  return parsed;
+}
