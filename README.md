@@ -9,9 +9,8 @@
 - **Seamless Database Upgradability**: The architecture incorporates a flexible SQLite database design that facilitates effortless updates and enhancements to the puzzle database.
 - **Upcoming**: Currently features blindfold training puzzles, with plans to expand to include various mini-games focusing on different aspects of chess strategy.
 
-<br>
-<img src="https://github.com/dancingmadman2/chess_vision/assets/88443368/33f94c25-fc4f-418c-bbb7-c831f41938dc" width=30% height=30%>
-<br>
+<img src="https://github.com/dancingmadman2/chess_vision/assets/88443368/33f94c25-fc4f-418c-bbb7-c831f41938dc" width=30% height=30%> <br>
+
 **Puzzles**
 <br>
 <img src="https://github.com/dancingmadman2/chess_vision/assets/88443368/46952ef7-6d4a-4e81-92a5-72e100442c18" width=30% height=30%>
