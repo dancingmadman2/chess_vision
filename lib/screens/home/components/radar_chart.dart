@@ -182,7 +182,7 @@ class _RadarChartSample1State extends State<RadarChartSample1> {
         title: 'You',
         color: widget.you,
         values: [
-          200,
+          75,
           150,
           50,
           75,

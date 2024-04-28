@@ -211,8 +211,7 @@ class _CombinedPuzzlesState extends State<CombinedPuzzles> {
       final part = parts[i];
 
       bool isSolution = solution.contains(part) &&
-          i > parts.length - (solution.length * 2 + 3) &&
-          isFinished;
+          i > parts.length - (solution.length * 2 + 3);
 
       final isNumberFollowedByPeriod = RegExp(r'\d+\. ').hasMatch(part);
       spans.add(
