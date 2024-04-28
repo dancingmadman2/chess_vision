@@ -9,11 +9,14 @@
 - **Expandable Training Modules**: Currently features basic blindfold training puzzles, with plans to expand to include various mini-games focusing on different aspects of chess strategy.
 
 **Home Screen**
-<br>
-<img src="https://github.com/dancingmadman2/chess_vision/assets/88443368/8c21b036-3733-45d7-8b83-5cc9e075ac7b" width=30% height=30%>
+<img src="https://github.com/dancingmadman2/chess_vision/assets/88443368/33f94c25-fc4f-418c-bbb7-c831f41938dc" width=30% height=30%>
 <br>
 **Puzzles Screen**
 <br>
 <img src="https://github.com/dancingmadman2/chess_vision/assets/88443368/46952ef7-6d4a-4e81-92a5-72e100442c18" width=30% height=30%>
-<img src="https://github.com/dancingmadman2/chess_vision/assets/88443368/b05c7ae9-89e5-4f6f-ac85-e6725d60e814" width=30% height=30%>
+<img src="https://github.com/dancingmadman2/chess_vision/assets/88443368/a4895bb3-cfc8-4ed1-9604-41381db2fd25" width=30% height=30%>
+
+
+
+
 
