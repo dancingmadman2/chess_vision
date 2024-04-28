@@ -15,5 +15,5 @@
 **Puzzles Screen**
 <br>
 <img src="https://github.com/dancingmadman2/chess_vision/assets/88443368/46952ef7-6d4a-4e81-92a5-72e100442c18" width=30% height=30%>
-![](https://github.com/dancingmadman2/chess_vision/assets/88443368/b05c7ae9-89e5-4f6f-ac85-e6725d60e814)
+<img src="https://github.com/dancingmadman2/chess_vision/assets/88443368/b05c7ae9-89e5-4f6f-ac85-e6725d60e814" width=30% height=30%>
 
