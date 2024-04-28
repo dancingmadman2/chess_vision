@@ -10,9 +10,9 @@
 
 **Home Screen**
 <br>
-<img src="https://github.com/dancingmadman2/chess_vision/assets/88443368/8c21b036-3733-45d7-8b83-5cc9e075ac7b" width=33% height=33%>
+<img src="https://github.com/dancingmadman2/chess_vision/assets/88443368/8c21b036-3733-45d7-8b83-5cc9e075ac7b" width=20% height=20%>
 <br>
 **Puzzles Screen**
 <br>
-<img src="https://github.com/dancingmadman2/chess_vision/assets/88443368/46952ef7-6d4a-4e81-92a5-72e100442c18" width=33% height=33%>
+<img src="https://github.com/dancingmadman2/chess_vision/assets/88443368/46952ef7-6d4a-4e81-92a5-72e100442c18" width=20% height=20%>
 
