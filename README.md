@@ -5,7 +5,6 @@
 - **Interactive Solving**: Creating intuitive blindfold puzzles is hard but this interactive mechanism makes it easier.
 - **Fast Initilization**: Taking advantage of batch transactions in SQLite, database initizaliation takes less than 3 seconds.
 - **Large Puzzle Database**: Includes 30 thousand puzzles from the Lichess puzzle database, tailored and optimized for blindfold training.
-- **Database Upgradability**: This flexible design is achieved by using SQLite as a database architecture, allowing for easy updating and enhancement of the puzzle database.
 - **Upcoming**: Currently features blindfold training puzzles, with plans to expand to include various mini-games focusing on different aspects of chess strategy.
 
 <img src="https://github.com/dancingmadman2/chess_vision/assets/88443368/33f94c25-fc4f-418c-bbb7-c831f41938dc" width=30% height=30%> <br>
